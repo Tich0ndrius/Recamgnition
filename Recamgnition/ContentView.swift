@@ -8,14 +8,26 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State var cameraViewModel = CameraViewModel()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack {
+            CameraPreview(session: cameraViewModel.captureSession)
+                .ignoresSafeArea()
+                .task {
+                    await cameraViewModel.setUpCaptureSession()
+                }
+            
+            VStack {
+                Spacer()
+                
+                Text(cameraViewModel.currentObject.capitalized + ", " + "\(Int(cameraViewModel.confidence * 100))%")
+                    .font(.title)
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
+                    .padding(.bottom)
+            }
         }
-        .padding()
     }
 }
 
