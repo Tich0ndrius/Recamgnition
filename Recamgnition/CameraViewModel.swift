@@ -7,15 +7,14 @@
 
 import Observation
 import AVFoundation
-import Vision
 
 @Observable final class CameraViewModel: NSObject {
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
+    private let recognitionService = RecognitionService()
+    var currentRecognition: RecognitionResult?
     let captureSession = AVCaptureSession()
-    var currentObject = ""
-    var confidence: Float = 0.0
     private var state: CameraState = .idle
-    private var isProcessing = false
+    
     
     // MARK: Authorization
     var isAuthorized: Bool {
@@ -42,9 +41,6 @@ import Vision
         
         do {
             try configureSession()
-            startSession()
-            state = .running
-            
         } catch let error as CameraSetupError {
             state = .failed(error)
         } catch {
@@ -91,8 +87,12 @@ import Vision
         sessionQueue.async { [weak self] in
             guard let self else { return }
             
-            if !self.captureSession.isRunning {
-                self.captureSession.startRunning()
+            guard !captureSession.isRunning else { return }
+            
+            captureSession.startRunning()
+            
+            DispatchQueue.main.async {
+                self.state = .running
             }
         }
     }
@@ -101,8 +101,12 @@ import Vision
         sessionQueue.async { [weak self] in
             guard let self else { return }
             
-            if self.captureSession.isRunning {
-                self.captureSession.stopRunning()
+            guard captureSession.isRunning else { return }
+            
+            captureSession.stopRunning()
+            
+            DispatchQueue.main.async {
+                self.state = .idle
             }
         }
     }
@@ -111,35 +115,25 @@ import Vision
 
 extension CameraViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
     // MARK: Converting raw data to Pixel Buffer without copying
-    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+    func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
         
         guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         
-        processFrame(pixelBuffer)
+        guard let result = recognitionService.processFrame(pixelBuffer) else { return }
+        
+        guard result != currentRecognition else { return }
+        
+        DispatchQueue.main.async {
+            self.currentRecognition = result
+        }
+        
     }
     
-    // MARK: Vision implementation
-    private func processFrame(_ pixelBuffer: CVPixelBuffer) {
-        guard !isProcessing else { return }
-        isProcessing = true
-        defer { isProcessing = false }
-        
-        let request = VNClassifyImageRequest()
-        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer)
-        
-        try? handler.perform([request])
-        
-        guard let observation = request.results?.first as? VNClassificationObservation else { return }
-        
-        if currentObject != observation.identifier {
-            if observation.confidence > 0.7{
-                DispatchQueue.main.async {
-                    self.currentObject = observation.identifier
-                    self.confidence = observation.confidence
-                }
-            }
-        }
-    }
+    
 }
 
 enum TargetAngle: CGFloat {
