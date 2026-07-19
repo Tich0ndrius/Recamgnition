@@ -5,18 +5,16 @@
 //  Created by Tykhon on 16.06.2026.
 //
 
-//import CoreImage
 import Observation
 import AVFoundation
 import Vision
 
 @Observable final class CameraViewModel: NSObject {
-//    var frame: CGImage?
-//    private let context = CIContext()
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
     let captureSession = AVCaptureSession()
     var currentObject = ""
     var confidence: Float = 0.0
+    private var state: CameraState = .idle
     private var isProcessing = false
     
     // MARK: Authorization
@@ -34,38 +32,80 @@ import Vision
     
     // MARK: Capture Session Set-up
     func setUpCaptureSession() async {
-        guard await isAuthorized else { return }
+        state = .requestingPermission
+        guard await isAuthorized else {
+            state = .denied
+            return
+        }
+
+        state = .configuring
+        
+        do {
+            try configureSession()
+            startSession()
+            state = .running
+            
+        } catch let error as CameraSetupError {
+            state = .failed(error)
+        } catch {
+            state = .failed(.unknown("DEBUG: Unknown error \(error.localizedDescription)"))
+        }
+    }
+    
+    private func configureSession() throws {
         captureSession.beginConfiguration()
+        defer { captureSession.commitConfiguration() }
         
         let videoOutput = AVCaptureVideoDataOutput()
-        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
-        guard let videoDeviceInput = try? AVCaptureDeviceInput(device: videoDevice) else { return }
-        guard captureSession.canAddInput(videoDeviceInput) else { return }
+        
+        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+            throw CameraSetupError.deviceUnaviable
+        }
+        
+        guard let videoDeviceInput = try? AVCaptureDeviceInput(device: videoDevice) else {
+            throw CameraSetupError.cannotCreateInput
+        }
+        
+        guard captureSession.canAddInput(videoDeviceInput) else {
+            throw CameraSetupError.cannotAddInput
+        }
         captureSession.addInput(videoDeviceInput)
         
         videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "sampleBufferQueue"))
-        guard captureSession.canAddOutput(videoOutput) else { return }
+        
+        guard captureSession.canAddOutput(videoOutput) else {
+            throw CameraSetupError.cannotAddOutput
+        }
+        
         captureSession.addOutput(videoOutput)
         
-//        deprecated
-//        videoOutput.connection(with: .video)?.videoOrientation = .portrait
         if let connection = videoOutput.connection(with: .video) {
             let targetAngle: CGFloat = TargetAngle.portrait.rawValue
             if connection.isVideoRotationAngleSupported(targetAngle) {
                 connection.videoRotationAngle = targetAngle
             }
         }
-        
-        captureSession.commitConfiguration()
-        startSession()
     }
     
     func startSession() {
         sessionQueue.async { [weak self] in
-            self?.captureSession.startRunning()
+            guard let self else { return }
+            
+            if !self.captureSession.isRunning {
+                self.captureSession.startRunning()
+            }
         }
     }
     
+    func stopSession() {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            
+            if self.captureSession.isRunning {
+                self.captureSession.stopRunning()
+            }
+        }
+    }
 }
 
 
@@ -100,22 +140,6 @@ extension CameraViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
             }
         }
     }
-    
-    
-//    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-//        guard let cgImage = imageFromSampleBuffer(sampleBuffer: sampleBuffer) else { return }
-//        
-//        DispatchQueue.main.async { [weak self] in
-//            self?.frame = cgImage
-//        }
-//    }
-//    
-//    private func imageFromSampleBuffer(sampleBuffer: CMSampleBuffer) -> CGImage? {
-//        guard let imageBuffer: CVImageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return nil }
-//        let ciImage: CIImage = CIImage(cvImageBuffer: imageBuffer)
-//        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
-//        return cgImage
-//    }
 }
 
 enum TargetAngle: CGFloat {
@@ -125,8 +149,20 @@ enum TargetAngle: CGFloat {
     case upsideDownPortrait = 270.0
 }
 
-struct RecognitionHistory {
-    let name: String
-    let confidence: Float
-    let date: Date
+enum CameraState: Equatable {
+    case idle
+    case requestingPermission
+    case configuring
+    case running
+    case denied
+    case failed(CameraSetupError)
+}
+
+enum CameraSetupError: Error, Equatable {
+    case permissionDenied
+    case deviceUnaviable
+    case cannotCreateInput
+    case cannotAddInput
+    case cannotAddOutput
+    case unknown(String)
 }
