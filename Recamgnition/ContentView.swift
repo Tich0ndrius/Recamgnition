@@ -16,8 +16,8 @@ struct ContentView: View {
             CameraPreview(session: cameraViewModel.captureSession)
                 .ignoresSafeArea()
                 .task {
-                    await cameraViewModel.setUpCaptureSession()
-                    cameraViewModel.startSession()
+                    await cameraViewModel.setupCamera()
+                    cameraViewModel.start()
                 }
             
             VStack {
@@ -39,9 +39,9 @@ struct ContentView: View {
         .onChange(of: scenePhase) { _, newPhase in
             
             switch newPhase {
-            case .active: cameraViewModel.startSession()
+            case .active: cameraViewModel.start()
                 
-            case .inactive, .background: cameraViewModel.stopSession()
+            case .inactive, .background: cameraViewModel.stop()
                 
             @unknown default: break
             }
