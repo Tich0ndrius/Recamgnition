@@ -12,7 +12,7 @@ import AVFoundation
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
     private let recognitionService = RecognitionService()
     private var lastProcessingTime: CFTimeInterval = 0
-    private let processingInterval: CFTimeInterval = 0.15
+    private let processingInterval: CFTimeInterval = 0.1
     var currentRecognition: RecognitionResult?
     let captureSession = AVCaptureSession()
     private var state: CameraState = .idle
@@ -55,8 +55,13 @@ import AVFoundation
         defer { captureSession.commitConfiguration() }
         
         let videoOutput = AVCaptureVideoDataOutput()
+        videoOutput.alwaysDiscardsLateVideoFrames = true
         
-        guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+        guard let videoDevice = AVCaptureDevice.default(
+            .builtInWideAngleCamera,
+            for: .video,
+            position: .back
+        ) else {
             throw CameraSetupError.deviceUnaviable
         }
         
@@ -69,7 +74,10 @@ import AVFoundation
         }
         captureSession.addInput(videoDeviceInput)
         
-        videoOutput.setSampleBufferDelegate(self, queue: DispatchQueue(label: "sampleBufferQueue"))
+        videoOutput.setSampleBufferDelegate(
+            self,
+            queue: DispatchQueue(label: "sampleBufferQueue")
+        )
         
         guard captureSession.canAddOutput(videoOutput) else {
             throw CameraSetupError.cannotAddOutput
@@ -127,9 +135,7 @@ extension CameraViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
         guard currentTime - lastProcessingTime >= processingInterval else { return }
         lastProcessingTime = currentTime
         
-        guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        
-        guard let result = recognitionService.processFrame(pixelBuffer) else { return }
+        guard let result = recognitionService.processFrame(sampleBuffer) else { return }
         
         guard result != currentRecognition else { return }
         

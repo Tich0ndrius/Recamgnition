@@ -20,15 +20,21 @@ final class RecognitionService {
     private let minimumConfidence: Float = 0.65
     
     // MARK: Vision implementation
-    func processFrame(_ pixelBuffer: CVPixelBuffer) -> RecognitionResult? {
+    func processFrame(_ sampleBuffer: CMSampleBuffer) -> RecognitionResult? {
         
         guard !isProcessing else { return nil}
         isProcessing = true
         defer { isProcessing = false }
         
+        guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return nil }
+        
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer)
         
-        try? handler.perform([request])
+        do {
+            try handler.perform([request])
+        } catch {
+            return nil
+        }
         
         guard let observation = request.results?.first as? VNClassificationObservation,
         observation.confidence > minimumConfidence
