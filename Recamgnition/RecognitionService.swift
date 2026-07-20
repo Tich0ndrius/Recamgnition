@@ -13,6 +13,11 @@ struct RecognitionResult: Equatable {
 
 final class RecognitionService {
     private var isProcessing = false
+    private var previousIdentifier: String?
+    private var repeatCount = 0
+    private let request = VNClassifyImageRequest()
+    private let requiredRepeats = 3
+    private let minimumConfidence: Float = 0.65
     
     // MARK: Vision implementation
     func processFrame(_ pixelBuffer: CVPixelBuffer) -> RecognitionResult? {
@@ -21,18 +26,28 @@ final class RecognitionService {
         isProcessing = true
         defer { isProcessing = false }
         
-        let request = VNClassifyImageRequest()
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer)
         
         try? handler.perform([request])
         
         guard let observation = request.results?.first as? VNClassificationObservation,
-        observation.confidence > 0.65
+        observation.confidence > minimumConfidence
         else { return nil }
         
+        if observation.identifier == previousIdentifier {
+            repeatCount += 1
+        } else {
+            previousIdentifier = observation.identifier
+            repeatCount = 1
+        }
+        
+        guard repeatCount >= requiredRepeats else { return nil }
+        
+        repeatCount = 0
+        
         return RecognitionResult(
-            identifier: observation.identifier,
-            confidence: observation.confidence
+                identifier: observation.identifier,
+                confidence: observation.confidence
         )
     }
 }

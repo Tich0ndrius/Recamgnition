@@ -11,6 +11,8 @@ import AVFoundation
 @Observable final class CameraViewModel: NSObject {
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
     private let recognitionService = RecognitionService()
+    private var lastProcessingTime: CFTimeInterval = 0
+    private let processingInterval: CFTimeInterval = 0.15
     var currentRecognition: RecognitionResult?
     let captureSession = AVCaptureSession()
     private var state: CameraState = .idle
@@ -120,6 +122,10 @@ extension CameraViewModel: AVCaptureVideoDataOutputSampleBufferDelegate {
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
+        //Limiting FPS for processing
+        let currentTime = CACurrentMediaTime()
+        guard currentTime - lastProcessingTime >= processingInterval else { return }
+        lastProcessingTime = currentTime
         
         guard let pixelBuffer: CVPixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         
