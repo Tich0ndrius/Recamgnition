@@ -14,15 +14,21 @@ final class CameraViewModel {
     private var lastProcessingTime: CFTimeInterval = 0
     private let processingInterval: CFTimeInterval = 0.1
     
-    private let recognitionService = RecognitionService()
-    private let cameraService = CameraService()
+    private let recognitionService: RecognitionServiceProtocol
+    private let cameraService: CameraServiceProtocol
     
     var currentRecognition: RecognitionResult?
     
     let captureSession: AVCaptureSession
 
     
-    init() {
+    init(
+        cameraService: any CameraServiceProtocol,
+        recognitionService: any RecognitionServiceProtocol
+    ) {
+        self.cameraService = cameraService
+        self.recognitionService = recognitionService
+        
         captureSession = cameraService.captureSession
         cameraService.delegate = self
     }

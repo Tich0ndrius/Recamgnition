@@ -11,7 +11,7 @@ struct RecognitionResult: Equatable {
     var confidence: Float
 }
 
-final class RecognitionService {
+final class RecognitionService: RecognitionServiceProtocol {
     private var isProcessing = false
     private var previousIdentifier: String?
     private var repeatCount = 0

@@ -15,7 +15,7 @@ protocol CameraServiceDelegate: AnyObject {
 }
 
 
-final class CameraService: NSObject {
+final class CameraService: NSObject, CameraServiceProtocol {
     
     weak var delegate: CameraServiceDelegate?
     

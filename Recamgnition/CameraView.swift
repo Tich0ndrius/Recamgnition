@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  CameraView.swift
 //  Recamgnition
 //
 //  Created by Tykhon on 16.06.2026.
@@ -7,13 +7,16 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct CameraView: View {
     @Environment(\.scenePhase) private var scenePhase
-    @State var cameraViewModel = CameraViewModel()
+    @State var cameraViewModel = CameraViewModel(
+        cameraService: CameraService(),
+        recognitionService: RecognitionService()
+    )
     
     var body: some View {
         ZStack {
-            CameraPreview(session: cameraViewModel.captureSession)
+            CameraPreviewBridge(session: cameraViewModel.captureSession)
                 .ignoresSafeArea()
                 .task {
                     await cameraViewModel.setupCamera()
@@ -50,5 +53,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    CameraView()
 }
