@@ -14,8 +14,8 @@ final class CameraViewModel {
     private var lastProcessingTime: CFTimeInterval = 0
     private let processingInterval: CFTimeInterval = 0.1
     
-    private let recognitionService: RecognitionServiceProtocol
-    private let cameraService: CameraServiceProtocol
+    private let cameraService: any CameraServiceProtocol
+    private let recognitionService: any RecognitionServiceProtocol
     
     var currentRecognition: RecognitionResult?
     
@@ -48,7 +48,7 @@ final class CameraViewModel {
 
 extension CameraViewModel: CameraServiceDelegate {
     func cameraService(
-        _ service: CameraService,
+        _ service: any CameraServiceProtocol,
         didOutput sampleBuffer: CMSampleBuffer
     ) {
         //Limiting FPS for processing

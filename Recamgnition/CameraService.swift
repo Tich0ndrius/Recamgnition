@@ -9,7 +9,7 @@ import AVFoundation
 
 protocol CameraServiceDelegate: AnyObject {
     func cameraService(
-        _ service: CameraService,
+        _ service: any CameraServiceProtocol,
         didOutput sampleBuffer: CMSampleBuffer
     )
 }
