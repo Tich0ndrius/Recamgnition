@@ -7,6 +7,16 @@
 
 import AVFoundation
 
+protocol CameraServiceProtocol: AnyObject {
+    var captureSession: AVCaptureSession { get }
+    var delegate: CameraServiceDelegate? { get set }
+    var cameraState: CameraState { get }
+    
+    func startSession()
+    func stopSession()
+    func setUpCaptureSession() async
+}
+
 protocol CameraServiceDelegate: AnyObject {
     func cameraService(
         _ service: any CameraServiceProtocol,
@@ -20,8 +30,8 @@ final class CameraService: NSObject, CameraServiceProtocol {
     weak var delegate: CameraServiceDelegate?
     
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
-
-    private var state: CameraState = .idle
+    
+    private(set) var cameraState: CameraState = .idle
     
     let captureSession = AVCaptureSession()
     
@@ -40,20 +50,20 @@ final class CameraService: NSObject, CameraServiceProtocol {
     
     // MARK: Capture Session Set-up
     func setUpCaptureSession() async {
-        state = .requestingPermission
+        cameraState = .requestingPermission
         guard await isAuthorized else {
-            state = .denied
+            cameraState = .permissionDenied
             return
         }
-
-        state = .configuring
+        
+        cameraState = .configuring
         
         do {
             try configureSession()
         } catch let error as CameraSetupError {
-            state = .failed(error)
+            cameraState = .failed(error)
         } catch {
-            state = .failed(.unknown("DEBUG: Unknown error \(error.localizedDescription)"))
+            cameraState = .failed(.unknown("DEBUG: Unknown error \(error.localizedDescription)"))
         }
     }
     
@@ -104,31 +114,21 @@ final class CameraService: NSObject, CameraServiceProtocol {
     
     // MARK: Camera Life Cycle
     func startSession() {
-        sessionQueue.async {
-            
-            guard !self.captureSession.isRunning else { return }
-            
-            self.captureSession.startRunning()
-            Task { @MainActor in
-                self.state = .running
-            }
-        }
+        cameraState = .running
+        
+        guard !self.captureSession.isRunning else { return }
+        
+        self.captureSession.startRunning()
     }
     
     func stopSession() {
-        sessionQueue.async {
-            
-            guard self.captureSession.isRunning else { return }
-            
-            self.captureSession.stopRunning()
-            
-            Task { @MainActor in
-                self.state = .idle
-            }
-        }
+        cameraState = .idle
+        
+        guard self.captureSession.isRunning else { return }
+        
+        self.captureSession.stopRunning()
     }
 }
-
 
 
 extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
@@ -158,12 +158,11 @@ enum CameraState: Equatable {
     case requestingPermission
     case configuring
     case running
-    case denied
+    case permissionDenied
     case failed(CameraSetupError)
 }
 
 enum CameraSetupError: Error, Equatable {
-    case permissionDenied
     case deviceUnaviable
     case cannotCreateInput
     case cannotAddInput

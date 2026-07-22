@@ -6,6 +6,10 @@
 //
 import Vision
 
+protocol RecognitionServiceProtocol {
+    func processFrame(_ sampleBuffer: CMSampleBuffer) -> RecognitionResult?
+}
+
 struct RecognitionResult: Equatable {
     var identifier: String
     var confidence: Float

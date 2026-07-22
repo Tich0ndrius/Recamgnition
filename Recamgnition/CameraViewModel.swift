@@ -17,8 +17,8 @@ final class CameraViewModel {
     private let cameraService: any CameraServiceProtocol
     private let recognitionService: any RecognitionServiceProtocol
     
+    var cameraState: CameraState = .idle
     var currentRecognition: RecognitionResult?
-    
     let captureSession: AVCaptureSession
 
     
@@ -34,15 +34,20 @@ final class CameraViewModel {
     }
     
     func setupCamera() async {
+//        guard captureSession.inputs.isEmpty else { return }
         await cameraService.setUpCaptureSession()
     }
     
     func start() {
         cameraService.startSession()
+        
+        cameraState = cameraService.cameraState
     }
     
     func stop() {
         cameraService.stopSession()
+        
+        cameraState = cameraService.cameraState
     }
 }
 
