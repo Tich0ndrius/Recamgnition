@@ -116,17 +116,21 @@ final class CameraService: NSObject, CameraServiceProtocol {
     func startSession() {
         cameraState = .running
         
-        guard !self.captureSession.isRunning else { return }
-        
-        self.captureSession.startRunning()
+        sessionQueue.async {
+            guard !self.captureSession.isRunning else { return }
+            
+            self.captureSession.startRunning()
+        }
     }
     
     func stopSession() {
         cameraState = .idle
         
-        guard self.captureSession.isRunning else { return }
-        
-        self.captureSession.stopRunning()
+        sessionQueue.async {
+            guard self.captureSession.isRunning else { return }
+            
+            self.captureSession.stopRunning()
+        }
     }
 }
 
