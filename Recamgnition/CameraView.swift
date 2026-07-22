@@ -67,10 +67,11 @@ struct CameraView: View {
                     }
                 }
             
+            case .idle:
+                Text("Camera is idle")
+                
             default:
-                ZStack {
-                    Text("Camera is idle")
-                }
+                Text("UNKNOWN STATE")
             }
             
             
