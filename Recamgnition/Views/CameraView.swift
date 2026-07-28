@@ -36,13 +36,19 @@ struct CameraView: View {
                             .padding()
                             .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
                             .padding(.bottom)
+                    } else {
+                        Text("Point the camera to the object...")
+                            .font(.title)
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
+                            .padding(.bottom)
                     }
                 }
                 
             case .configuring:
                 ProgressView()
                 
-            case .permissionDenied:
+            case .permissionDenied, .restricted:
                 ContentUnavailableView(
                     "Camera Access Required",
                     systemImage: "camera.fill",
@@ -67,8 +73,8 @@ struct CameraView: View {
                     }
                 }
             
-            case .idle:
-                Text("Camera is idle")
+            case .ready:
+                Text("Camera is on hold.")
                 
             default:
                 Text("UNKNOWN STATE")

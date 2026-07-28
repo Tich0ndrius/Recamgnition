@@ -10,7 +10,7 @@ import AVFoundation
 protocol CameraServiceProtocol: AnyObject {
     var captureSession: AVCaptureSession { get }
     var delegate: CameraServiceDelegate? { get set }
-    var cameraState: CameraState { get }
+    var cameraStateStream: AsyncStream<CameraState> { get }
     
     func startSession()
     func stopSession()
@@ -31,39 +31,80 @@ final class CameraService: NSObject, CameraServiceProtocol {
     
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
     
-    private(set) var cameraState: CameraState = .idle
+    let cameraStateStream: AsyncStream<CameraState>
+    private let stateContinuation: AsyncStream<CameraState>.Continuation
+    private(set) var currentState: CameraState = .idle
     
     let captureSession = AVCaptureSession()
+    var isAuthorized: Bool = false
+    
+    override init() {
+        let (stream, continuation) = AsyncStream.makeStream(
+            of: CameraState.self,
+            bufferingPolicy: .bufferingNewest(1)
+        )
+        
+        cameraStateStream = stream
+        stateContinuation = continuation
+        
+        super .init()
+        stateContinuation.yield(.idle)
+    }
+    
+    deinit {
+        stateContinuation.finish()
+    }
+    
     
     // MARK: Authorization
-    var isAuthorized: Bool {
-        get async {
-            let status = AVCaptureDevice.authorizationStatus(for: .video)
-            var isAuthorized = status == .authorized
+    func checkForAuthorization() async {
+        transition(to: .requestingPermission)
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        
+        switch status {
+        case .authorized:
+            isAuthorized = true
+            transition(to: .permissionGranted)
             
-            if status == .notDetermined {
-                isAuthorized = await AVCaptureDevice.requestAccess(for: .video)
-            }
-            return isAuthorized
+        case .restricted:
+            isAuthorized = false
+            transition(to: .restricted)
+            
+        case .denied:
+            isAuthorized = false
+            transition(to: .permissionDenied)
+        
+        case .notDetermined:
+            isAuthorized = false
+            transition(to: .requestingPermission)
+            await AVCaptureDevice.requestAccess(for: .video)
+            
+        @unknown default:
+            break
         }
+    }
+    
+    func transition(to newState: CameraState) {
+        guard newState != currentState else { return }
+        
+        currentState = newState
+        stateContinuation.yield(newState)
     }
     
     // MARK: Capture Session Set-up
     func setUpCaptureSession() async {
-        cameraState = .requestingPermission
-        guard await isAuthorized else {
-            cameraState = .permissionDenied
-            return
-        }
+        await checkForAuthorization()
+        guard isAuthorized else { return }
         
-        cameraState = .configuring
+        transition(to: .configuring)
         
         do {
             try configureSession()
+            transition(to: .ready)
         } catch let error as CameraSetupError {
-            cameraState = .failed(error)
+            transition(to: .failed(error))
         } catch {
-            cameraState = .failed(.unknown("DEBUG: Unknown error \(error.localizedDescription)"))
+            transition(to: .failed(.unknown("DEBUG: Unknown error \(error.localizedDescription)")))
         }
     }
     
@@ -114,7 +155,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     
     // MARK: Camera Life Cycle
     func startSession() {
-        cameraState = .running
+        transition(to: .running)
         
         sessionQueue.async {
             guard !self.captureSession.isRunning else { return }
@@ -124,7 +165,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     }
     
     func stopSession() {
-        cameraState = .idle
+        transition(to: .ready)
         
         sessionQueue.async {
             guard self.captureSession.isRunning else { return }
@@ -157,16 +198,19 @@ enum TargetAngle: CGFloat {
     case upsideDownPortrait = 270.0
 }
 
-enum CameraState: Equatable {
+enum CameraState: Equatable, Sendable {
     case idle
     case requestingPermission
+    case permissionGranted
     case configuring
+    case ready
     case running
     case permissionDenied
+    case restricted
     case failed(CameraSetupError)
 }
 
-enum CameraSetupError: Error, Equatable {
+enum CameraSetupError: Error, Equatable, Sendable {
     case deviceUnaviable
     case cannotCreateInput
     case cannotAddInput

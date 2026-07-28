@@ -11,11 +11,10 @@ import AVFoundation
 @MainActor
 @Observable
 final class CameraViewModel {
-    private var lastProcessingTime: CFTimeInterval = 0
-    private let processingInterval: CFTimeInterval = 0.1
     
     private let cameraService: any CameraServiceProtocol
     private let recognitionService: any RecognitionServiceProtocol
+    private var stateObservationTask: Task<Void, Never>?
     
     var cameraState: CameraState = .idle
     var currentRecognition: RecognitionResult?
@@ -31,36 +30,38 @@ final class CameraViewModel {
         
         captureSession = cameraService.captureSession
         cameraService.delegate = self
+        startObservingCameraStates()
+    }
+    
+    func startObservingCameraStates() {
+        guard stateObservationTask == nil else { return }
+        
+        let states = cameraService.cameraStateStream
+        
+        stateObservationTask = Task { [weak self] in
+            for await newState in states {
+                guard let self = self else { break }
+                self.cameraState = newState
+            }
+        }
     }
     
     func setupCamera() async {
-//        guard captureSession.inputs.isEmpty else { return }
         await cameraService.setUpCaptureSession()
     }
     
     func start() {
         cameraService.startSession()
-        
-        cameraState = cameraService.cameraState
     }
     
     func stop() {
         cameraService.stopSession()
-        
-        cameraState = cameraService.cameraState
     }
 }
 
 extension CameraViewModel: CameraServiceDelegate {
-    func cameraService(
-        _ service: any CameraServiceProtocol,
-        didOutput sampleBuffer: CMSampleBuffer
-    ) {
-        //Limiting FPS for processing
-        let currentTime = CACurrentMediaTime()
-        guard currentTime - lastProcessingTime >= processingInterval else { return }
-        lastProcessingTime = currentTime
-        
+    
+    func cameraService(_ service: any CameraServiceProtocol, didOutput sampleBuffer: CMSampleBuffer) {
         guard let result = recognitionService.processFrame(sampleBuffer) else { return }
         
         guard result != currentRecognition else { return }
