@@ -11,10 +11,11 @@ import AVFoundation
 @MainActor
 @Observable
 final class CameraViewModel {
-    
     private let cameraService: any CameraServiceProtocol
     private let recognitionService: any RecognitionServiceProtocol
+    
     private var stateObservationTask: Task<Void, Never>?
+    private var recognitionObservationTask: Task<Void, Never>?
     
     var cameraState: CameraState = .idle
     var currentRecognition: RecognitionResult?
@@ -29,9 +30,12 @@ final class CameraViewModel {
         self.recognitionService = recognitionService
         
         captureSession = cameraService.captureSession
-        cameraService.delegate = self
+        
         startObservingCameraStates()
+        startObservingRecognitionResults()
+        recognitionService.startObservingFramesAndProcess(sampleBufferStream: cameraService.sampleBufferStream)
     }
+    
     
     func startObservingCameraStates() {
         guard stateObservationTask == nil else { return }
@@ -46,6 +50,21 @@ final class CameraViewModel {
         }
     }
     
+    func startObservingRecognitionResults() {
+        guard recognitionObservationTask == nil else { return }
+        
+        let results = recognitionService.resultStream
+        
+        recognitionObservationTask = Task { [weak self] in
+            for await newResult in results {
+                guard let self = self else { break }
+                self.currentRecognition = newResult
+            }
+        }
+        
+        
+    }
+    
     func setUpCameraAndStart() async {
         await cameraService.setUpCaptureSession()
         start()
@@ -57,18 +76,5 @@ final class CameraViewModel {
     
     func stop() {
         cameraService.stopSession()
-    }
-}
-
-extension CameraViewModel: CameraServiceDelegate {
-    
-    func cameraService(_ service: any CameraServiceProtocol, didOutput sampleBuffer: CMSampleBuffer) {
-        guard let result = recognitionService.processFrame(sampleBuffer) else { return }
-        
-        guard result != currentRecognition else { return }
-        
-        Task { @MainActor in
-            currentRecognition = result
-        }
     }
 }

@@ -9,6 +9,8 @@ import QuartzCore
 
 protocol RecognitionServiceProtocol {
     func processFrame(_ sampleBuffer: CMSampleBuffer) -> RecognitionResult?
+    var resultStream: AsyncStream<RecognitionResult> { get }
+    func startObservingFramesAndProcess(sampleBufferStream: AsyncStream<CMSampleBuffer>)
 }
 
 final class RecognitionService: RecognitionServiceProtocol {
@@ -18,9 +20,25 @@ final class RecognitionService: RecognitionServiceProtocol {
     private var accumulator = RecognitionAccumulator()
     private let configuration: RecognitionConfiguration
     
-    init(configuration: RecognitionConfiguration = RecognitionConfiguration()) {
+    let resultStream: AsyncStream<RecognitionResult>
+    private let resultContinuation: AsyncStream<RecognitionResult>.Continuation
+    private var frameObservationTask: Task<Void, Never>?
+    
+    
+    init(
+        configuration: RecognitionConfiguration = RecognitionConfiguration(),
+    ) {
         self.configuration = configuration
+          
+        let (stream, continuation) = AsyncStream.makeStream(of: RecognitionResult.self)
+        self.resultStream = stream
+        self.resultContinuation = continuation
     }
+    
+    deinit {
+        resultContinuation.finish()
+    }
+    
     
     // MARK: Vision implementation
     func processFrame(_ sampleBuffer: CMSampleBuffer) -> RecognitionResult? {
@@ -44,5 +62,19 @@ final class RecognitionService: RecognitionServiceProtocol {
         let rawResult = RecognitionResult(identifier: observation.identifier, confidence: observation.confidence)
         let currentTime = CACurrentMediaTime()
         return accumulator.process(rawResult, with: configuration, at: currentTime)
+    }
+    
+    func startObservingFramesAndProcess(sampleBufferStream: AsyncStream<CMSampleBuffer>) {
+        guard frameObservationTask == nil else { return }
+        
+        frameObservationTask = Task { [weak self] in
+            for await newFrame in sampleBufferStream {
+                guard let self = self else { break }
+                
+                if let result = self.processFrame(newFrame) {
+                    self.resultContinuation.yield(result)
+                }
+            }
+        }
     }
 }

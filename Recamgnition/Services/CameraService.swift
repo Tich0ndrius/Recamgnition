@@ -9,25 +9,15 @@ import AVFoundation
 
 protocol CameraServiceProtocol: AnyObject {
     var captureSession: AVCaptureSession { get }
-    var delegate: CameraServiceDelegate? { get set }
     var cameraStateStream: AsyncStream<CameraState> { get }
+    var sampleBufferStream: AsyncStream<CMSampleBuffer> { get }
     
     func startSession()
     func stopSession()
     func setUpCaptureSession() async
 }
 
-protocol CameraServiceDelegate: AnyObject {
-    func cameraService(
-        _ service: any CameraServiceProtocol,
-        didOutput sampleBuffer: CMSampleBuffer
-    )
-}
-
-
 final class CameraService: NSObject, CameraServiceProtocol {
-    
-    weak var delegate: CameraServiceDelegate?
     
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
     
@@ -35,24 +25,35 @@ final class CameraService: NSObject, CameraServiceProtocol {
     private let stateContinuation: AsyncStream<CameraState>.Continuation
     private(set) var currentState: CameraState = .idle
     
+    let sampleBufferStream: AsyncStream<CMSampleBuffer>
+    private let frameContinuation: AsyncStream<CMSampleBuffer>.Continuation
+    
     let captureSession = AVCaptureSession()
     private(set) var isAuthorized: Bool = false
     
+    
     override init() {
-        let (stream, continuation) = AsyncStream.makeStream(
+        let (stateStream, stateContinuation) = AsyncStream.makeStream(
             of: CameraState.self,
             bufferingPolicy: .bufferingNewest(1)
         )
+        self.cameraStateStream = stateStream
+        self.stateContinuation = stateContinuation
         
-        cameraStateStream = stream
-        stateContinuation = continuation
+        let (frameStream, frameContinuation) = AsyncStream.makeStream(
+            of: CMSampleBuffer.self,
+            bufferingPolicy: .bufferingNewest(1)
+        )
+        self.sampleBufferStream = frameStream
+        self.frameContinuation = frameContinuation
         
         super .init()
-        stateContinuation.yield(.idle)
+        self.stateContinuation.yield(.idle)
     }
     
     deinit {
         stateContinuation.finish()
+        frameContinuation.finish()
     }
     
     
@@ -183,10 +184,7 @@ extension CameraService: AVCaptureVideoDataOutputSampleBufferDelegate {
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
-        delegate?.cameraService(
-            self,
-            didOutput: sampleBuffer
-        )
+        frameContinuation.yield(sampleBuffer)
     }
 }
 
