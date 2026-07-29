@@ -36,7 +36,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     private(set) var currentState: CameraState = .idle
     
     let captureSession = AVCaptureSession()
-    var isAuthorized: Bool = false
+    private(set) var isAuthorized: Bool = false
     
     override init() {
         let (stream, continuation) = AsyncStream.makeStream(

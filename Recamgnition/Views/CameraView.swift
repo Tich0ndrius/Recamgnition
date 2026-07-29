@@ -45,7 +45,7 @@ struct CameraView: View {
                     }
                 }
                 
-            case .configuring:
+            case .idle, .requestingPermission, .configuring:
                 ProgressView()
                 
             case .permissionDenied, .restricted:
@@ -68,8 +68,7 @@ struct CameraView: View {
                 )
                 Button("Retry") {
                     Task {
-                        await cameraViewModel.setupCamera()
-                        cameraViewModel.start()
+                        await cameraViewModel.setUpCameraAndStart()
                     }
                 }
             
@@ -83,8 +82,7 @@ struct CameraView: View {
             
         }
         .task {
-            await cameraViewModel.setupCamera()
-            cameraViewModel.start()
+            await cameraViewModel.setUpCameraAndStart()
         }
         .onChange(of: scenePhase) { _, newPhase in
             

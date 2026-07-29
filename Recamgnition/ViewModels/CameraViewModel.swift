@@ -46,8 +46,9 @@ final class CameraViewModel {
         }
     }
     
-    func setupCamera() async {
+    func setUpCameraAndStart() async {
         await cameraService.setUpCaptureSession()
+        start()
     }
     
     func start() {
