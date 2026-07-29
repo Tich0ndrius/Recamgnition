@@ -1,5 +1,5 @@
 //
-//  CameraPreview.swift
+//  CameraPreviewBridge.swift
 //  Recamgnition
 //
 //  Created by Tykhon on 17.06.2026.
@@ -8,12 +8,12 @@
 import SwiftUI
 import AVFoundation
 
-struct CameraPreview: UIViewRepresentable {
+struct CameraPreviewBridge: UIViewRepresentable {
     let session: AVCaptureSession
     
-    func makeUIView(context: Context) -> PreviewView {
+    func makeUIView(context: Context) -> PreviewViewLayer {
         
-        let view = PreviewView()
+        let view = PreviewViewLayer()
         
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
@@ -22,7 +22,7 @@ struct CameraPreview: UIViewRepresentable {
     }
     
     func updateUIView(
-        _ uiView: PreviewView,
+        _ uiView: PreviewViewLayer,
         context: Context
     ) {}
 }
