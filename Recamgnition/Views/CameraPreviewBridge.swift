@@ -21,8 +21,5 @@ struct CameraPreviewBridge: UIViewRepresentable {
         return view
     }
     
-    func updateUIView(
-        _ uiView: PreviewViewLayer,
-        context: Context
-    ) {}
+    func updateUIView(_ uiView: PreviewViewLayer, context: Context) {}
 }

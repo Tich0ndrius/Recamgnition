@@ -68,17 +68,15 @@ final class CameraService: NSObject, CameraServiceProtocol {
             transition(to: .permissionGranted)
             
         case .restricted:
-            isAuthorized = false
             transition(to: .restricted)
             
         case .denied:
-            isAuthorized = false
             transition(to: .permissionDenied)
         
         case .notDetermined:
-            isAuthorized = false
             transition(to: .requestingPermission)
-            await AVCaptureDevice.requestAccess(for: .video)
+            isAuthorized = await AVCaptureDevice.requestAccess(for: .video)
+        
             
         @unknown default:
             break
@@ -96,7 +94,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     func setUpCaptureSession() async {
         await checkForAuthorization()
         guard isAuthorized else { return }
-        
+
         transition(to: .configuring)
         
         do {
