@@ -28,7 +28,7 @@ struct CameraView: View {
                     
                     if let recognition = cameraViewModel.currentRecognition {
                         Text(
-                            "\(recognition.identifier.capitalized)" +
+                            "\(recognition.displayedName.capitalized)" +
                             ", " +
                             "\(Int(recognition.confidence * 100))%"
                         )

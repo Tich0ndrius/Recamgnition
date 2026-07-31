@@ -5,11 +5,23 @@
 //  Created by Tykhon on 28.07.2026.
 //
 
-import CoreFoundation
+import Foundation
 
 struct RecognitionResult: Equatable {
     private(set) var identifier: String
     private(set) var confidence: Float
+}
+
+extension RecognitionResult {
+    var displayedName: String {
+        return NSLocalizedString(
+            identifier,
+            tableName: "VisionClassification",
+            bundle: .main,
+            value: identifier,
+            comment: "Vision classification"
+        )
+    }
 }
 
 struct RecognitionConfiguration {
