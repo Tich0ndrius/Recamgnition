@@ -18,8 +18,10 @@ final class CameraViewModel {
     private var recognitionObservationTask: Task<Void, Never>?
     
     var cameraState: CameraState = .idle
+    var captureMode: CaptureMode = .recognition
     var currentRecognition: RecognitionResult?
     let captureSession: AVCaptureSession
+    
 
     
     init(
@@ -63,6 +65,11 @@ final class CameraViewModel {
         }
         
         
+    }
+    
+    func toggleCaptureMode() {
+        cameraService.toggleCaptureMode()
+        captureMode = cameraService.currentMode
     }
     
     func setUpCameraAndStart() async {

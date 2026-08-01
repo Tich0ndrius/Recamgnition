@@ -15,83 +15,83 @@ struct CameraView: View {
     )
     
     var body: some View {
-        ZStack {
-            switch cameraViewModel.cameraState {
-            
-            case .running:
-                CameraPreviewBridge(session: cameraViewModel.captureSession)
-                    .ignoresSafeArea()
-                    
+        NavigationStack {
+            ZStack {
+                switch cameraViewModel.cameraState {
                 
-                VStack {
-                    Spacer()
-                    
-                    if let recognition = cameraViewModel.currentRecognition {
-                        Text(
-                            "\(recognition.displayedName.capitalized)" +
-                            ", " +
-                            "\(Int(recognition.confidence * 100))%"
-                        )
-                            .font(.title)
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
-                            .padding(.bottom)
-                    } else {
-                        Text("Point the camera to the object...")
-                            .font(.title)
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
-                            .padding(.bottom)
+                case .running:
+                    CameraPreviewBridge(session: cameraViewModel.captureSession)
+                        .ignoresSafeArea()
+                        
+                    switch cameraViewModel.captureMode {
+                    case .recognition:
+                        RecognitionView()
+                        
+                    case .codes:
+                        ScannerView()
                     }
+                    
+                    
+                case .idle, .requestingPermission, .configuring:
+                    ProgressView()
+                    
+                case .permissionDenied, .restricted:
+                    ContentUnavailableView(
+                        "Camera Access Required",
+                        systemImage: "camera.fill",
+                        description: Text("Please, allow camera access in Settings.")
+                    )
+                        Button("Open settings") {
+                            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                            UIApplication.shared.open(url)
+                        }
+                    
+                    
+                case .failed(let error):
+                    ContentUnavailableView(
+                        "Camera Error",
+                        systemImage: "exclamationmark.fill",
+                        description: Text(error.localizedDescription)
+                    )
+                    Button("Retry") {
+                        Task {
+                            await cameraViewModel.setUpCameraAndStart()
+                        }
+                    }
+                
+                case .ready:
+                    Text("Camera is on hold.")
+                    
+                default:
+                    Text("UNKNOWN STATE")
                 }
                 
-            case .idle, .requestingPermission, .configuring:
-                ProgressView()
                 
-            case .permissionDenied, .restricted:
-                ContentUnavailableView(
-                    "Camera Access Required",
-                    systemImage: "camera.fill",
-                    description: Text("Please, allow camera access in Settings.")
-                )
-                    Button("Open settings") {
-                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                        UIApplication.shared.open(url)
-                    }
-                
-                
-            case .failed(let error):
-                ContentUnavailableView(
-                    "Camera Error",
-                    systemImage: "exclamationmark.fill",
-                    description: Text(error.localizedDescription)
-                )
-                Button("Retry") {
-                    Task {
-                        await cameraViewModel.setUpCameraAndStart()
-                    }
-                }
-            
-            case .ready:
-                Text("Camera is on hold.")
-                
-            default:
-                Text("UNKNOWN STATE")
             }
-            
-            
-        }
-        .task {
-            await cameraViewModel.setUpCameraAndStart()
-        }
-        .onChange(of: scenePhase) { _, newPhase in
-            
-            switch newPhase {
-            case .active: cameraViewModel.start()
+            .task {
+                await cameraViewModel.setUpCameraAndStart()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
                 
-            case .inactive, .background: cameraViewModel.stop()
-                
-            @unknown default: break
+                switch newPhase {
+                case .active: cameraViewModel.start()
+                    
+                case .inactive, .background: cameraViewModel.stop()
+                    
+                @unknown default: break
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            cameraViewModel.toggleCaptureMode()
+                        }
+                    } label: {
+                        Image(systemName: cameraViewModel.captureMode.iconName)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                }
             }
         }
     }
