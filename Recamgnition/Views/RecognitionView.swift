@@ -8,16 +8,13 @@
 import SwiftUI
 
 struct RecognitionView: View {
-    @State var cameraViewModel = CameraViewModel(
-        cameraService: CameraService(),
-        recognitionService: RecognitionService()
-    )
+    let currentRecognition: RecognitionResult?
     
     var body: some View {
         VStack {
             Spacer()
             
-            if let recognition = cameraViewModel.currentRecognition {
+            if let recognition = currentRecognition {
                 Text(
                     "\(recognition.displayedName.capitalized)" +
                     ", " +
@@ -26,23 +23,23 @@ struct RecognitionView: View {
                 .font(.title)
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
-                .padding(.bottom)
+                .padding()
             } else {
                 Text("Point the camera to the object...")
                     .font(.title)
                     .padding()
                     .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
-                    .padding(.bottom)
+                    .padding()
             }
         }
     }
 }
 
-#Preview("English") {
-    RecognitionView()
-}
-
-#Preview("Russian") {
-    RecognitionView()
-        .environment(\.locale, Locale(identifier: "RU"))
-}
+//#Preview("English") {
+//    RecognitionView()
+//}
+//
+//#Preview("Russian") {
+//    RecognitionView()
+//        .environment(\.locale, Locale(identifier: "RU"))
+//}

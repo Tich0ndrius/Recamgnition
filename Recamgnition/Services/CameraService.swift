@@ -11,21 +11,25 @@ protocol CameraServiceProtocol: AnyObject {
     var captureSession: AVCaptureSession { get }
     var cameraStateStream: AsyncStream<CameraState> { get }
     var sampleBufferStream: AsyncStream<CMSampleBuffer> { get }
+    var scannedResultStream: AsyncStream<ScannedResult> { get }
     
     var currentMode: CaptureMode { get set }
     
-    func toggleCaptureMode()
+    func toggleTorch(_ enabled: Bool) throws -> Bool
+    func resetScannedResult()
+    func switchCaptureMode(to newMode: CaptureMode)
     func startSession()
     func stopSession()
     func setUpCaptureSession() async
 }
 
+
 final class CameraService: NSObject, CameraServiceProtocol {
     
     private let sessionQueue = DispatchQueue(label: "camera.session.queue")
     
-//    let captureModeStream: AsyncStream<CaptureMode>
-//    private let captureModeContinuation: AsyncStream<CaptureMode>.Continuation
+    let scannedResultStream: AsyncStream<ScannedResult>
+    private let scannedResultContinuation: AsyncStream<ScannedResult>.Continuation
     var currentMode: CaptureMode = .recognition
     
     let cameraStateStream: AsyncStream<CameraState>
@@ -39,9 +43,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     private var videoDevice: AVCaptureDevice?
     
     private(set) var isAuthorized: Bool = false
-    var isTorchOn: Bool = false
-    var isScanning: Bool = false
-    var scannedResult: ScannedResult?
+    private(set) var scannedResult: ScannedResult?
     
     
     
@@ -54,37 +56,61 @@ final class CameraService: NSObject, CameraServiceProtocol {
         self.sampleBufferStream = frameStream
         self.frameContinuation = frameContinuation
         
-//        let (modeStream, modeContinuation) = AsyncStream.makeStream(of: CaptureMode.self, bufferingPolicy: .bufferingNewest(1))
-//        self.captureModeStream = modeStream
-//        self.captureModeContinuation = modeContinuation
+        let (scannedResultStream, scannedResultContinuation) = AsyncStream.makeStream(of: ScannedResult.self, bufferingPolicy: .bufferingNewest(1))
+        self.scannedResultStream = scannedResultStream
+        self.scannedResultContinuation = scannedResultContinuation
         
         super .init()
         
         self.stateContinuation.yield(.idle)
-//        self.captureModeContinuation.yield(.recognition)
     }
     
     deinit {
         stateContinuation.finish()
         frameContinuation.finish()
-//        captureModeContinuation.finish()
+        scannedResultContinuation.finish()
     }
     
+    // MARK: --
     
-    func toggleTorch() {
-        guard let device = videoDevice, device.hasTorch else { return }
-        try? device.lockForConfiguration()
-        isTorchOn.toggle()
-        device.torchMode = isTorchOn ? .on : .off
-        device.unlockForConfiguration()
+    func toggleTorch(_ enabled: Bool) throws -> Bool {
+        guard let device = videoDevice, device.hasTorch else { throw TorchError.torchNotSupported }
+        guard device.isTorchAvailable else { throw TorchError.torchUnavailable }
+        
+        do {
+            try device.lockForConfiguration()
+        } catch {
+            print("Failed to lock device for configuration: \(error.localizedDescription)")
+        }
+        
+        defer { device.unlockForConfiguration() }
+        
+        let desiredMode: AVCaptureDevice.TorchMode = enabled ? .on : .off
+        guard device.isTorchModeSupported(desiredMode) else { throw TorchError.modeNotSupported }
+        
+        device.torchMode = desiredMode
+        return device.torchMode == .on
     }
     
     func resetScannedResult() {
-        isScanning = false
+        scannedResult = nil
+    }
+    
+    private func transition(to newState: CameraState) {
+        guard newState != currentState else { return }
+        
+        currentState = newState
+        stateContinuation.yield(newState)
+    }
+    
+    func switchCaptureMode (to newMode: CaptureMode) {
+        guard newMode != currentMode else { return }
+        
+        currentMode = newMode
     }
     
     // MARK: Authorization
-    func checkForAuthorization() async {
+    private func checkForAuthorization() async {
         transition(to: .requestingPermission)
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         
@@ -108,19 +134,6 @@ final class CameraService: NSObject, CameraServiceProtocol {
             break
         }
     }
-    
-    func transition(to newState: CameraState) {
-        guard newState != currentState else { return }
-        
-        currentState = newState
-        stateContinuation.yield(newState)
-    }
-    
-    func toggleCaptureMode () {
-        currentMode = (currentMode == .recognition) ? .codes : .recognition
-//        captureModeContinuation.yield(currentMode)
-    }
-    
     
     // MARK: Capture Session Set-up
     func setUpCaptureSession() async {
@@ -211,7 +224,6 @@ final class CameraService: NSObject, CameraServiceProtocol {
             guard !self.captureSession.isRunning else { return }
             
             self.captureSession.startRunning()
-            self.isScanning = true
         }
     }
     
@@ -222,7 +234,6 @@ final class CameraService: NSObject, CameraServiceProtocol {
             guard self.captureSession.isRunning else { return }
             
             self.captureSession.stopRunning()
-            self.isScanning = false
         }
     }
 }
@@ -248,6 +259,7 @@ extension CameraService: AVCaptureMetadataOutputObjectsDelegate {
     ) {
         guard currentMode == .codes else { return }
         guard scannedResult == nil else { return }
+        
         guard let metadataObject = metadataObjects.first as? AVMetadataMachineReadableCodeObject else { return }
         guard let readableObject = metadataObject.stringValue else { return }
         
@@ -260,11 +272,12 @@ extension CameraService: AVCaptureMetadataOutputObjectsDelegate {
         } else {
             scannedResult = .text(readableObject)
         }
+        scannedResultContinuation.yield(scannedResult!)
     }
 }
 
 
-enum TargetAngle: CGFloat {
+enum TargetAngle: CGFloat, Equatable, Sendable {
     case landscapeRight = 0.0
     case portrait = 90.0
     case landscapeLeft = 180.0
@@ -290,9 +303,9 @@ enum CaptureMode: Equatable, Sendable {
     var iconName: String {
         switch self {
         case .recognition:
-            return "camera.viewfinder"
-        case .codes:
             return "qrcode.viewfinder"
+        case .codes:
+            return "brain"
         }
     }
 }
@@ -317,4 +330,10 @@ enum CameraSetupError: Error, Equatable, Sendable {
     case cannotAddInput
     case cannotAddOutput
     case unknown(String)
+}
+
+enum TorchError: Error, Equatable, Sendable {
+    case torchUnavailable
+    case torchNotSupported
+    case modeNotSupported
 }

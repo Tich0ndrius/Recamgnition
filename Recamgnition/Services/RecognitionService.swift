@@ -9,7 +9,7 @@ import QuartzCore
 
 protocol RecognitionServiceProtocol {
     func processFrame(_ sampleBuffer: CMSampleBuffer) -> RecognitionResult?
-    var resultStream: AsyncStream<RecognitionResult> { get }
+    var recognitionResultStream: AsyncStream<RecognitionResult> { get }
     func startObservingFramesAndProcess(sampleBufferStream: AsyncStream<CMSampleBuffer>)
 }
 
@@ -20,8 +20,8 @@ final class RecognitionService: RecognitionServiceProtocol {
     private var accumulator = RecognitionAccumulator()
     private let configuration: RecognitionConfiguration
     
-    let resultStream: AsyncStream<RecognitionResult>
-    private let resultContinuation: AsyncStream<RecognitionResult>.Continuation
+    let recognitionResultStream: AsyncStream<RecognitionResult>
+    private let recognitionResultContinuation: AsyncStream<RecognitionResult>.Continuation
     private var frameObservationTask: Task<Void, Never>?
     
     
@@ -31,12 +31,12 @@ final class RecognitionService: RecognitionServiceProtocol {
         self.configuration = configuration
           
         let (stream, continuation) = AsyncStream.makeStream(of: RecognitionResult.self)
-        self.resultStream = stream
-        self.resultContinuation = continuation
+        self.recognitionResultStream = stream
+        self.recognitionResultContinuation = continuation
     }
     
     deinit {
-        resultContinuation.finish()
+        recognitionResultContinuation.finish()
     }
     
     
@@ -72,7 +72,7 @@ final class RecognitionService: RecognitionServiceProtocol {
                 guard let self = self else { break }
                 
                 if let result = self.processFrame(newFrame) {
-                    self.resultContinuation.yield(result)
+                    self.recognitionResultContinuation.yield(result)
                 }
             }
         }
