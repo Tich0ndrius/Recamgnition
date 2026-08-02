@@ -16,9 +16,14 @@ final class CameraViewModel {
     
     private var stateObservationTask: Task<Void, Never>?
     private var recognitionObservationTask: Task<Void, Never>?
+    private var scannedResultObservationTask: Task<Void, Never>?
     
-    var cameraState: CameraState = .idle
-    var currentRecognition: RecognitionResult?
+    private(set) var cameraState: CameraState = .idle
+    private(set) var captureMode: CaptureMode = .recognition
+    private(set) var isTorchOn: Bool = false
+    private(set) var scannedResult: ScannedResult?
+    private(set) var currentRecognition: RecognitionResult?
+    
     let captureSession: AVCaptureSession
 
     
@@ -33,9 +38,11 @@ final class CameraViewModel {
         
         startObservingCameraStates()
         startObservingRecognitionResults()
+        startObservingScannedResults()
         recognitionService.startObservingFramesAndProcess(sampleBufferStream: cameraService.sampleBufferStream)
     }
     
+    // MARK: -
     
     func startObservingCameraStates() {
         guard stateObservationTask == nil else { return }
@@ -50,10 +57,23 @@ final class CameraViewModel {
         }
     }
     
+    func startObservingScannedResults() {
+        guard scannedResultObservationTask == nil else { return }
+        
+        let results = cameraService.scannedResultStream
+        
+        scannedResultObservationTask = Task { [weak self] in
+            for await newResult in results {
+                guard let self = self else { break }
+                self.scannedResult = newResult
+            }
+        }
+    }
+    
     func startObservingRecognitionResults() {
         guard recognitionObservationTask == nil else { return }
         
-        let results = recognitionService.resultStream
+        let results = recognitionService.recognitionResultStream
         
         recognitionObservationTask = Task { [weak self] in
             for await newResult in results {
@@ -61,8 +81,25 @@ final class CameraViewModel {
                 self.currentRecognition = newResult
             }
         }
-        
-        
+    }
+    
+    
+    func switchCaptureMode(to newMode: CaptureMode) {
+        cameraService.switchCaptureMode(to: newMode)
+        captureMode = newMode
+    }
+    
+    func toggleTorch() {
+        do {
+            isTorchOn = try cameraService.toggleTorch(!isTorchOn)
+        } catch {
+            print("\(error.localizedDescription)")
+        }
+    }
+    
+    func resetScannedResult() {
+        cameraService.resetScannedResult()
+        scannedResult = nil
     }
     
     func setUpCameraAndStart() async {

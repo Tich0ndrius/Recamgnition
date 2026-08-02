@@ -15,33 +15,65 @@ struct CameraView: View {
     )
     
     var body: some View {
+        
         ZStack {
             switch cameraViewModel.cameraState {
-            
-            case .running:
-                CameraPreviewBridge(session: cameraViewModel.captureSession)
-                    .ignoresSafeArea()
-                    
                 
-                VStack {
-                    Spacer()
-                    
-                    if let recognition = cameraViewModel.currentRecognition {
-                        Text(
-                            "\(recognition.displayedName.capitalized)" +
-                            ", " +
-                            "\(Int(recognition.confidence * 100))%"
-                        )
-                            .font(.title)
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
-                            .padding(.bottom)
-                    } else {
-                        Text("Point the camera to the object...")
-                            .font(.title)
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
-                            .padding(.bottom)
+            case .running:
+                NavigationStack {
+                    ZStack {
+                        CameraPreviewBridge(session: cameraViewModel.captureSession)
+                            .ignoresSafeArea()
+                        
+                        
+                        switch cameraViewModel.captureMode {
+                            
+                        case .recognition:
+                            RecognitionView(currentRecognition: cameraViewModel.currentRecognition)
+                            
+                        case .codes:
+                            ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resetScannedResult)
+                            
+                        }
+                    }
+                    .toolbar {
+                        ToolbarItem(placement: .primaryAction) {
+                            Button {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    cameraViewModel.toggleTorch()
+                                }
+                            } label: {
+                                Image(systemName: torchIconName)
+                                    .foregroundStyle(cameraViewModel.isTorchOn ? .yellow : .primary)
+                            }
+                        }
+                        
+                        ToolbarSpacer(placement: .primaryAction)
+                        
+                        switch cameraViewModel.captureMode {
+                        case .codes:
+                            ToolbarItem(placement: .primaryAction) {
+                                Button {
+                                    withAnimation(.spring(duration: 0.3)) {
+                                        cameraViewModel.switchCaptureMode(to: .recognition)
+                                    }
+                                } label: {
+                                    Image(systemName: cameraViewModel.captureMode.iconName)
+                                        .contentTransition(.symbolEffect(.replace))
+                                }
+                            }
+                        case .recognition:
+                            ToolbarItem(placement: .primaryAction) {
+                                Button {
+                                    withAnimation(.spring(duration: 0.3)) {
+                                        cameraViewModel.switchCaptureMode(to: .codes)
+                                    }
+                                } label: {
+                                    Image(systemName: cameraViewModel.captureMode.iconName)
+                                        .contentTransition(.symbolEffect(.replace))
+                                }
+                            }
+                        }
                     }
                 }
                 
@@ -54,10 +86,10 @@ struct CameraView: View {
                     systemImage: "camera.fill",
                     description: Text("Please, allow camera access in Settings.")
                 )
-                    Button("Open settings") {
-                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                        UIApplication.shared.open(url)
-                    }
+                Button("Open settings") {
+                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                    UIApplication.shared.open(url)
+                }
                 
                 
             case .failed(let error):
@@ -71,7 +103,7 @@ struct CameraView: View {
                         await cameraViewModel.setUpCameraAndStart()
                     }
                 }
-            
+                
             case .ready:
                 Text("Camera is on hold.")
                 
@@ -81,6 +113,7 @@ struct CameraView: View {
             
             
         }
+        
         .task {
             await cameraViewModel.setUpCameraAndStart()
         }
@@ -97,10 +130,17 @@ struct CameraView: View {
     }
 }
 
+extension CameraView {
+    private var torchIconName: String {
+        cameraViewModel.isTorchOn ? "bolt.fill" : "bolt.slash.fill"
+    }
+}
+
 #Preview ("English") {
     ZStack {
         CameraView()
     }
+    .environment(\.locale, Locale(identifier: "EN"))
 }
 
 #Preview ("Russian") {
