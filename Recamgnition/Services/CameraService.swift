@@ -218,22 +218,26 @@ final class CameraService: NSObject, CameraServiceProtocol {
     
     // MARK: Camera Life Cycle
     func startSession() {
-        transition(to: .running)
+        guard isAuthorized else { return }
         
-        sessionQueue.async {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
             guard !self.captureSession.isRunning else { return }
             
             self.captureSession.startRunning()
+            self.transition(to: .running)
         }
     }
     
     func stopSession() {
-        transition(to: .ready)
+        guard isAuthorized else { return }
         
-        sessionQueue.async {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
             guard self.captureSession.isRunning else { return }
             
             self.captureSession.stopRunning()
+            self.transition(to: .ready)
         }
     }
 }

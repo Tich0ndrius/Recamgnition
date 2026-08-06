@@ -81,34 +81,57 @@ struct CameraView: View {
                 ProgressView()
                 
             case .permissionDenied, .restricted:
-                ContentUnavailableView(
-                    "Camera Access Required",
-                    systemImage: "camera.fill",
-                    description: Text("Please, allow camera access in Settings.")
-                )
-                Button("Open settings") {
-                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                    UIApplication.shared.open(url)
+                VStack {
+                    ContentUnavailableView(
+                        "Camera Access Required",
+                        systemImage: "camera.fill",
+                        description: Text("Please, allow camera access in Settings.")
+                    )
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.primary)
+                    
+                    Button() {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        UIApplication.shared.open(url)
+                    } label: {
+                        Label("Open settings", systemImage: "arrow.forward")
+                    }
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.primary)
+                    
+                    Spacer()
                 }
+                .padding()
                 
                 
             case .failed(let error):
-                ContentUnavailableView(
-                    "Camera Error",
-                    systemImage: "exclamationmark.fill",
-                    description: Text(error.localizedDescription)
-                )
-                Button("Retry") {
-                    Task {
-                        await cameraViewModel.setUpCameraAndStart()
+                VStack {
+                    ContentUnavailableView(
+                        "Camera Error",
+                        systemImage: "exclamationmark.fill",
+                        description: Text(error.localizedDescription)
+                    )
+                    Button() {
+                        Task {
+                            await cameraViewModel.setUpCameraAndStart()
+                        }
+                    } label: {
+                        Label("Retry", systemImage: "arrow.clockwise")
                     }
+                    
+                    Spacer()
                 }
+                .padding()
                 
             case .ready:
-                Text("Camera is on hold.")
+                Text("Camera is on hold")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.primary)
                 
             default:
                 Text("UNKNOWN STATE")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.primary)
             }
             
             
