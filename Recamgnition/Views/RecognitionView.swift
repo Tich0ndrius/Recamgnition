@@ -20,15 +20,17 @@ struct RecognitionView: View {
                     ", " +
                     "\(Int(recognition.confidence * 100))%"
                 )
-                .font(.title)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
                 .padding()
-                .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.7)))
                 .padding()
             } else {
                 Text("Point the camera to the object...")
-                    .font(.title)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.white)
                     .padding()
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.5)))
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.cyan.opacity(0.7)))
                     .padding()
             }
         }
