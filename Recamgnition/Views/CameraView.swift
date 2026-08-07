@@ -20,11 +20,9 @@ struct CameraView: View {
             switch cameraViewModel.cameraState {
                 
             case .running:
-                NavigationStack {
                     ZStack {
                         CameraPreviewBridge(session: cameraViewModel.captureSession)
                             .ignoresSafeArea()
-                        
                         
                         switch cameraViewModel.captureMode {
                             
@@ -35,47 +33,12 @@ struct CameraView: View {
                             ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resetScannedResult)
                             
                         }
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .primaryAction) {
-                            Button {
-                                withAnimation(.spring(duration: 0.3)) {
-                                    cameraViewModel.toggleTorch()
-                                }
-                            } label: {
-                                Image(systemName: torchIconName)
-                                    .foregroundStyle(cameraViewModel.isTorchOn ? .yellow : .primary)
-                            }
-                        }
                         
-                        ToolbarSpacer(placement: .primaryAction)
-                        
-                        switch cameraViewModel.captureMode {
-                        case .codes:
-                            ToolbarItem(placement: .primaryAction) {
-                                Button {
-                                    withAnimation(.spring(duration: 0.3)) {
-                                        cameraViewModel.switchCaptureMode(to: .recognition)
-                                    }
-                                } label: {
-                                    Image(systemName: cameraViewModel.captureMode.iconName)
-                                        .contentTransition(.symbolEffect(.replace))
-                                }
-                            }
-                        case .recognition:
-                            ToolbarItem(placement: .primaryAction) {
-                                Button {
-                                    withAnimation(.spring(duration: 0.3)) {
-                                        cameraViewModel.switchCaptureMode(to: .codes)
-                                    }
-                                } label: {
-                                    Image(systemName: cameraViewModel.captureMode.iconName)
-                                        .contentTransition(.symbolEffect(.replace))
-                                }
-                            }
+                        VStack {
+                            topBar
+                            Spacer()
                         }
                     }
-                }
                 
             case .idle, .requestingPermission, .configuring:
                 ProgressView()
@@ -85,7 +48,7 @@ struct CameraView: View {
                     ContentUnavailableView(
                         "Camera Access Required",
                         systemImage: "camera.fill",
-                        description: Text("Please, allow camera access in Settings.")
+                        description: Text("Please, allow camera access in settings.")
                     )
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
@@ -97,7 +60,6 @@ struct CameraView: View {
                         Label("Open settings", systemImage: "arrow.forward")
                     }
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.primary)
                     
                     Spacer()
                 }
@@ -157,7 +119,83 @@ extension CameraView {
     private var torchIconName: String {
         cameraViewModel.isTorchOn ? "bolt.fill" : "bolt.slash.fill"
     }
+    
+    private var topBarName: String {
+        switch cameraViewModel.captureMode {
+        case .codes: String(localized: "top_bar_name.codes", defaultValue: "Code Scanner")
+        case .recognition: String(localized: "top_bar_name.recognition", defaultValue: "Object classification")
+        }
+    }
+    
+    private var topBarDescription: String {
+        switch cameraViewModel.captureMode {
+        case .codes: String(localized: "top_bar_description.codes", defaultValue: "Point the camera at the code")
+        case .recognition: String(localized: "top_bar_description.recognition", defaultValue: "Point the camera at the object")
+        }
+    }
+    
+    @ViewBuilder
+    private var topBar: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(topBarName)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(.white)
+                Text(topBarDescription)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            
+            Spacer()
+            HStack(spacing: 2) {
+                Button {
+                    withAnimation(.spring(duration: 0.3)) {
+                        cameraViewModel.toggleTorch()
+                    }
+                } label: {
+                    Image(systemName: torchIconName)
+                        .frame(width: 50, height: 50)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
+                        .foregroundStyle(cameraViewModel.isTorchOn ? .yellow : .primary)
+                }
+                
+                switch cameraViewModel.captureMode {
+                    
+                case .codes:
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            cameraViewModel.switchCaptureMode(to: .recognition)
+                        }
+                    } label: {
+                        Image(systemName: cameraViewModel.captureMode.iconName)
+                            .frame(width: 50, height: 50)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
+                            .foregroundStyle(.black)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                    
+                case .recognition:
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            cameraViewModel.switchCaptureMode(to: .codes)
+                        }
+                    } label: {
+                        Image(systemName: cameraViewModel.captureMode.iconName)
+                            .frame(width: 50, height: 50)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
+                            .foregroundStyle(.black)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                }
+            }
+        }
+        .padding()
+    }
 }
+
 
 #Preview ("English") {
     ZStack {

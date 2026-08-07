@@ -47,11 +47,6 @@ struct ScannerView: View {
                 
             }
             
-            VStack {
-                topBar
-                Spacer()
-            }
-            
             if let result = scannedResult {
                 VStack {
                     Spacer()
@@ -65,33 +60,6 @@ struct ScannerView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: scannedResult != nil)
             }
         }
-    }
-}
-
-extension ScannerView {
-    @ViewBuilder
-    private var topBar: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Code Scanner")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
-                Text("Point the camera at the code")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-            
-            Spacer()
-            
-            //            Button {
-            //                cameraViewModel.toggleTorch()
-            //            } label: {
-            //                ZStack {
-            //                    Circle()
-            //                }
-            //            }
-        }
-        .padding()
     }
 }
 

@@ -167,8 +167,8 @@ extension ScanResultView {
     }
     private var typeLabel: String {
         switch result {
-        case .url: "Link"
-        case .text: "Text"
+        case .url: String(localized: "Link", defaultValue: "Link")
+        case .text: String(localized: "Text", defaultValue: "Text")
         }
     }
     private var iconBG: Color {
