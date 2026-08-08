@@ -16,7 +16,7 @@ protocol CameraServiceProtocol: AnyObject {
     var currentMode: CaptureMode { get set }
     
     func toggleTorch(_ enabled: Bool) throws -> Bool
-    func resetScannedResult()
+    func resumeScanning()
     func switchCaptureMode(to newMode: CaptureMode)
     func startSession()
     func stopSession()
@@ -93,7 +93,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
         return device.torchMode == .on
     }
     
-    func resetScannedResult() {
+    func resumeScanning() {
         scannedResult = nil
     }
     

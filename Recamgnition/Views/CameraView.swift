@@ -20,25 +20,25 @@ struct CameraView: View {
             switch cameraViewModel.cameraState {
                 
             case .running:
-                    ZStack {
-                        CameraPreviewBridge(session: cameraViewModel.captureSession)
-                            .ignoresSafeArea()
+                ZStack {
+                    CameraPreviewBridge(session: cameraViewModel.captureSession)
+                        .ignoresSafeArea()
+                    
+                    switch cameraViewModel.captureMode {
                         
-                        switch cameraViewModel.captureMode {
-                            
-                        case .recognition:
-                            RecognitionView(currentRecognition: cameraViewModel.currentRecognition)
-                            
-                        case .codes:
-                            ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resetScannedResult)
-                            
-                        }
+                    case .recognition:
+                        RecognitionView(currentRecognition: cameraViewModel.currentRecognition)
                         
-                        VStack {
-                            topBar
-                            Spacer()
-                        }
+                    case .codes:
+                        ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resetScannedResult)
+                        
                     }
+                    
+                    VStack {
+                        topBar
+                        Spacer()
+                    }
+                }
                 
             case .idle, .requestingPermission, .configuring:
                 ProgressView()
@@ -89,16 +89,19 @@ struct CameraView: View {
                 
             case .ready:
                 VStack (spacing: 16) {
-                    ZStack {
-                        Image(systemName: "zzz")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .offset(y: -40)
-                        
-                        Image(systemName: "camera")
-                            .font(.title)
-                            .fontWeight(.semibold)
-                    }
+                    //                    ZStack {
+                    Image(systemName: "zzz")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: 120, maxHeight: 120)
+                    //                            .font(.largeTitle)
+                    //                            .fontWeight(.bold)
+                    //                            .offset(y: -40)
+                    
+                    //                        Image(systemName: "camera")
+                    //                            .font(.title)
+                    //                            .fontWeight(.semibold)
+                    //                    }
                     
                     Text("Camera is on hold")
                         .font(.title2)

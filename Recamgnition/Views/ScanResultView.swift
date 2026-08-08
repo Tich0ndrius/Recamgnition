@@ -19,7 +19,7 @@ struct ScanResultView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(iconBG)
+                        .fill(iconBackground)
                         .frame(width: 48, height: 48)
                     Image(systemName: iconName)
                         .font(.title3)
@@ -69,10 +69,10 @@ struct ScanResultView: View {
             Spacer().frame(height: 20)
             
             VStack {
-                mainBtn
+                mainButton
                 HStack {
-                    copyBtn
-                    scanAgainBtn
+                    copyButton
+                    scanAgainButton
                 }
             }
             .padding(.horizontal, 20)
@@ -99,7 +99,7 @@ struct ScanResultView: View {
 extension ScanResultView {
     
     @ViewBuilder
-    private var mainBtn: some View {
+    private var mainButton: some View {
         switch result {
         case .url(let url):
             Button {
@@ -134,7 +134,7 @@ extension ScanResultView {
         }
     }
     
-    private var copyBtn: some View {
+    private var copyButton: some View {
         Button {
             UIPasteboard.general.string = result.rawString
             withAnimation { copied = true }
@@ -153,7 +153,7 @@ extension ScanResultView {
         }
     }
     
-    private var scanAgainBtn: some View {
+    private var scanAgainButton: some View {
         Button {
             onReset()
         } label: {
@@ -180,7 +180,7 @@ extension ScanResultView {
         case .text: String(localized: "Text", defaultValue: "Text")
         }
     }
-    private var iconBG: Color {
+    private var iconBackground: Color {
         switch result {
         case .url: .cyan.opacity(0.2)
         case .text: .purple.opacity(0.2)

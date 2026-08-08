@@ -98,7 +98,7 @@ final class CameraViewModel {
     }
     
     func resetScannedResult() {
-        cameraService.resetScannedResult()
+        cameraService.resumeScanning()
         scannedResult = nil
     }
     
