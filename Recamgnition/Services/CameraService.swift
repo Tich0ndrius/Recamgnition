@@ -43,6 +43,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     private var videoDevice: AVCaptureDevice?
     
     private(set) var isAuthorized: Bool = false
+    private(set) var isConfigured: Bool = false
     private(set) var scannedResult: ScannedResult?
     
     
@@ -144,6 +145,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
         
         do {
             try configureSession()
+            isConfigured = true
             transition(to: .ready)
         } catch let error as CameraSetupError {
             transition(to: .failed(error))
@@ -218,7 +220,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     
     // MARK: Camera Life Cycle
     func startSession() {
-        guard isAuthorized else { return }
+        guard isConfigured else { return }
         
         sessionQueue.async { [weak self] in
             guard let self else { return }
@@ -230,7 +232,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     }
     
     func stopSession() {
-        guard isAuthorized else { return }
+        guard isConfigured else { return }
         
         sessionQueue.async { [weak self] in
             guard let self else { return }

@@ -22,12 +22,14 @@ struct ScanResultView: View {
                         .fill(iconBG)
                         .frame(width: 48, height: 48)
                     Image(systemName: iconName)
-                        .font(.system(size: 20, weight: .medium))
+                        .font(.title3)
+                        .fontWeight(.bold)
                         .foregroundStyle(iconColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(typeLabel)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.footnote)
+                        .fontWeight(.medium)
                         .foregroundStyle(.white.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.8)
@@ -40,7 +42,8 @@ struct ScanResultView: View {
                     Circle().fill(.green.opacity(0.2))
                         .frame(width: 32, height: 32)
                     Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.footnote)
+                        .fontWeight(.bold)
                         .foregroundStyle(.green)
                 }
             }
@@ -53,7 +56,9 @@ struct ScanResultView: View {
             
             ScrollView {
                 Text(result.rawString)
-                    .font(.system(size: 15, weight: .regular, design: .monospaced))
+                    .font(.subheadline)
+                    .fontWeight(.regular)
+                    .fontDesign(.monospaced)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundStyle(.white.opacity(0.9))
@@ -101,7 +106,8 @@ extension ScanResultView {
                 UIApplication.shared.open(url)
             } label: {
                 Label("Open link", systemImage: "safari.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.callout)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
@@ -117,7 +123,8 @@ extension ScanResultView {
                 }
             } label: {
                 Label("Share text", systemImage: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.callout)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
@@ -136,7 +143,8 @@ extension ScanResultView {
             }
         } label: {
             Label(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
-                .font(.system(size: 14, weight: .medium))
+                .font(.subheadline)
+                .fontWeight(.medium)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
@@ -150,7 +158,8 @@ extension ScanResultView {
             onReset()
         } label: {
             Label("Scan again", systemImage: "qrcode.viewfinder")
-                .font(.system(size: 14, weight: .medium))
+                .font(.subheadline)
+                .fontWeight(.medium)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)

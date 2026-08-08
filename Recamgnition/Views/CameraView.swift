@@ -50,7 +50,8 @@ struct CameraView: View {
                         systemImage: "camera.fill",
                         description: Text("Please, allow camera access in settings.")
                     )
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.title2)
+                    .fontWeight(.bold)
                     .foregroundStyle(.primary)
                     
                     Button() {
@@ -59,7 +60,8 @@ struct CameraView: View {
                     } label: {
                         Label("Open settings", systemImage: "arrow.forward")
                     }
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.callout)
+                    .fontWeight(.bold)
                     
                     Spacer()
                 }
@@ -86,13 +88,29 @@ struct CameraView: View {
                 .padding()
                 
             case .ready:
-                Text("Camera is on hold")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.primary)
+                VStack (spacing: 16) {
+                    ZStack {
+                        Image(systemName: "zzz")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .offset(y: -40)
+                        
+                        Image(systemName: "camera")
+                            .font(.title)
+                            .fontWeight(.semibold)
+                    }
+                    
+                    Text("Camera is on hold")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                }
+                
                 
             default:
                 Text("UNKNOWN STATE")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.title2)
+                    .fontWeight(.bold)
                     .foregroundStyle(.primary)
             }
             
@@ -139,22 +157,23 @@ extension CameraView {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(topBarName)
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.title2)
+                    .fontWeight(.bold)
                     .foregroundStyle(.white)
                 Text(topBarDescription)
-                    .font(.system(size: 13))
+                    .font(.footnote)
                     .foregroundStyle(.white.opacity(0.5))
             }
             
             Spacer()
-            HStack(spacing: 2) {
+            HStack(spacing: 4) {
                 Button {
                     withAnimation(.spring(duration: 0.3)) {
                         cameraViewModel.toggleTorch()
                     }
                 } label: {
                     Image(systemName: torchIconName)
-                        .frame(width: 50, height: 50)
+                        .frame(maxWidth: 50, maxHeight: 50)
                         .background(.ultraThinMaterial, in: Circle())
                         .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
                         .foregroundStyle(cameraViewModel.isTorchOn ? .yellow : .primary)
@@ -169,7 +188,7 @@ extension CameraView {
                         }
                     } label: {
                         Image(systemName: cameraViewModel.captureMode.iconName)
-                            .frame(width: 50, height: 50)
+                            .frame(maxWidth: 50, maxHeight: 50)
                             .background(.ultraThinMaterial, in: Circle())
                             .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
                             .foregroundStyle(.black)
@@ -183,7 +202,7 @@ extension CameraView {
                         }
                     } label: {
                         Image(systemName: cameraViewModel.captureMode.iconName)
-                            .frame(width: 50, height: 50)
+                            .frame(maxWidth: 50, maxHeight: 50)
                             .background(.ultraThinMaterial, in: Circle())
                             .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
                             .foregroundStyle(.black)

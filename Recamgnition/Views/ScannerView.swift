@@ -38,7 +38,8 @@ struct ScannerView: View {
                         Spacer()
                         if scannedResult == nil {
                             Text("Scan the code")
-                                .font(.system(size: 15, weight: .medium))
+                                .font(.subheadline)
+                                .fontWeight(.medium)
                                 .foregroundStyle(.white)
                                 .padding(.bottom, geo.size.height * 0.3)
                         }
