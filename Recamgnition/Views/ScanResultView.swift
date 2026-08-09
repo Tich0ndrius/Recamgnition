@@ -93,6 +93,7 @@ struct ScanResultView: View {
                 appeared = true
             }
         }
+        .toolbar(.hidden, for: .tabBar)
     }
 }
 

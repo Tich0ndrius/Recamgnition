@@ -6,13 +6,20 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct CameraView: View {
+    
+    enum Tab: Hashable {
+        case cameraTab
+        case historyTab
+    }
+    
     @Environment(\.scenePhase) private var scenePhase
-    @State var cameraViewModel = CameraViewModel(
-        cameraService: CameraService(),
-        recognitionService: RecognitionService()
-    )
+    @State private var selectedTab: Tab = .cameraTab
+    
+    let cameraViewModel: CameraViewModel
+
     
     var body: some View {
         
@@ -20,25 +27,45 @@ struct CameraView: View {
             switch cameraViewModel.cameraState {
                 
             case .running:
-                ZStack {
-                    CameraPreviewBridge(session: cameraViewModel.captureSession)
-                        .ignoresSafeArea()
-                    
-                    switch cameraViewModel.captureMode {
+                TabView(selection: $selectedTab) {
+                    ZStack {
+                        CameraPreviewBridge(session: cameraViewModel.captureSession)
+                            .ignoresSafeArea()
                         
-                    case .recognition:
-                        RecognitionView(currentRecognition: cameraViewModel.currentRecognition)
+                        switch cameraViewModel.captureMode {
+                            
+                        case .recognition:
+                            RecognitionView(currentRecognition: cameraViewModel.currentRecognition)
+                            
+                        case .codes:
+                            ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resumeScanning)
+                            
+                        }
                         
-                    case .codes:
-                        ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resetScannedResult)
-                        
+                        VStack {
+                            topBar
+                            Spacer()
+                        }
                     }
-                    
-                    VStack {
-                        topBar
-                        Spacer()
+                    .tabItem {
+                        Label("", systemImage: "camera.fill")
                     }
+                    .tag(Tab.cameraTab)
+                    // TODO: Make the camera flow to stop when in history tab whithout overlapping the History screen with the View from .ready CameraState case
+//                    .onAppear {
+//                        cameraViewModel.start()
+//                    }
+                    
+                    HistoryView()
+                        .tabItem {
+                            Label("", systemImage: "list.bullet.rectangle.portrait")
+                        }
+                        .tag(Tab.historyTab)
+//                        .onAppear {
+//                            cameraViewModel.stop()
+//                        }
                 }
+                
                 
             case .idle, .requestingPermission, .configuring:
                 ProgressView()
@@ -75,6 +102,7 @@ struct CameraView: View {
                         systemImage: "exclamationmark.fill",
                         description: Text(error.localizedDescription)
                     )
+                    
                     Button() {
                         Task {
                             await cameraViewModel.setUpCameraAndStart()
@@ -88,26 +116,19 @@ struct CameraView: View {
                 .padding()
                 
             case .ready:
-                VStack (spacing: 16) {
-                    //                    ZStack {
-                    Image(systemName: "zzz")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: 120, maxHeight: 120)
-                    //                            .font(.largeTitle)
-                    //                            .fontWeight(.bold)
-                    //                            .offset(y: -40)
-                    
-                    //                        Image(systemName: "camera")
-                    //                            .font(.title)
-                    //                            .fontWeight(.semibold)
-                    //                    }
-                    
-                    Text("Camera is on hold")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.primary)
-                }
+                ContentUnavailableView("Camera is on hold", systemImage: "zzz")
+                
+//                VStack (spacing: 16) {
+//                    Image(systemName: "zzz")
+//                        .resizable()
+//                        .aspectRatio(contentMode: .fit)
+//                        .frame(maxWidth: 120, maxHeight: 120)
+//                    
+//                    Text("Camera is on hold")
+//                        .font(.title2)
+//                        .fontWeight(.bold)
+//                        .foregroundStyle(.primary)
+//                }
                 
                 
             default:
@@ -163,9 +184,11 @@ extension CameraView {
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
+                    .shadow(radius: 2)
                 Text(topBarDescription)
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.5))
+                    .shadow(radius: 1)
             }
             
             Spacer()
@@ -219,16 +242,16 @@ extension CameraView {
 }
 
 
-#Preview ("English") {
-    ZStack {
-        CameraView()
-    }
-    .environment(\.locale, Locale(identifier: "EN"))
-}
-
-#Preview ("Russian") {
-    ZStack {
-        CameraView()
-    }
-    .environment(\.locale, Locale(identifier: "RU"))
-}
+//#Preview ("English") {
+//    ZStack {
+//        CameraView(cameraViewModel: )
+//    }
+//    .environment(\.locale, Locale(identifier: "EN"))
+//}
+//
+//#Preview ("Russian") {
+//    ZStack {
+//        CameraView(cameraViewModel: )
+//    }
+//    .environment(\.locale, Locale(identifier: "RU"))
+//}
