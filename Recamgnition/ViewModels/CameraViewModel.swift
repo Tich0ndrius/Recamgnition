@@ -13,6 +13,7 @@ import AVFoundation
 final class CameraViewModel {
     private let cameraService: any CameraServiceProtocol
     private let recognitionService: any RecognitionServiceProtocol
+    private let scanHistoryRepository: any ScanHistoryRepositoryProtocol
     
     private var stateObservationTask: Task<Void, Never>?
     private var recognitionObservationTask: Task<Void, Never>?
@@ -29,10 +30,12 @@ final class CameraViewModel {
     
     init(
         cameraService: any CameraServiceProtocol,
-        recognitionService: any RecognitionServiceProtocol
+        recognitionService: any RecognitionServiceProtocol,
+        scanHistoryRepository: any ScanHistoryRepositoryProtocol
     ) {
         self.cameraService = cameraService
         self.recognitionService = recognitionService
+        self.scanHistoryRepository = scanHistoryRepository
         
         captureSession = cameraService.captureSession
         
@@ -65,7 +68,9 @@ final class CameraViewModel {
         scannedResultObservationTask = Task { [weak self] in
             for await newResult in results {
                 guard let self = self else { break }
-                self.scannedResult = newResult
+                
+                self.handleScanResult(newResult)
+//                self.scannedResult = newResult
             }
         }
     }
@@ -78,9 +83,16 @@ final class CameraViewModel {
         recognitionObservationTask = Task { [weak self] in
             for await newResult in results {
                 guard let self = self else { break }
+                
                 self.currentRecognition = newResult
             }
         }
+    }
+    
+    private func handleScanResult(_ result: ScannedResult) {
+        self.scannedResult = result
+        scanHistoryRepository.add(result)
+        
     }
     
     
@@ -97,8 +109,8 @@ final class CameraViewModel {
         }
     }
     
-    func resetScannedResult() {
-        cameraService.resetScannedResult()
+    func resumeScanning() {
+        cameraService.resumeScanning()
         scannedResult = nil
     }
     

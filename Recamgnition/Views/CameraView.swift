@@ -6,13 +6,20 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct CameraView: View {
+    
+    enum Tab: Hashable {
+        case cameraTab
+        case historyTab
+    }
+    
     @Environment(\.scenePhase) private var scenePhase
-    @State var cameraViewModel = CameraViewModel(
-        cameraService: CameraService(),
-        recognitionService: RecognitionService()
-    )
+    @State private var selectedTab: Tab = .cameraTab
+    
+    let cameraViewModel: CameraViewModel
+
     
     var body: some View {
         
@@ -20,11 +27,10 @@ struct CameraView: View {
             switch cameraViewModel.cameraState {
                 
             case .running:
-                NavigationStack {
+                TabView(selection: $selectedTab) {
                     ZStack {
                         CameraPreviewBridge(session: cameraViewModel.captureSession)
                             .ignoresSafeArea()
-                        
                         
                         switch cameraViewModel.captureMode {
                             
@@ -32,50 +38,34 @@ struct CameraView: View {
                             RecognitionView(currentRecognition: cameraViewModel.currentRecognition)
                             
                         case .codes:
-                            ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resetScannedResult)
+                            ScannerView(scannedResult: cameraViewModel.scannedResult, onReset: cameraViewModel.resumeScanning)
                             
                         }
-                    }
-                    .toolbar {
-                        ToolbarItem(placement: .primaryAction) {
-                            Button {
-                                withAnimation(.spring(duration: 0.3)) {
-                                    cameraViewModel.toggleTorch()
-                                }
-                            } label: {
-                                Image(systemName: torchIconName)
-                                    .foregroundStyle(cameraViewModel.isTorchOn ? .yellow : .primary)
-                            }
-                        }
                         
-                        ToolbarSpacer(placement: .primaryAction)
-                        
-                        switch cameraViewModel.captureMode {
-                        case .codes:
-                            ToolbarItem(placement: .primaryAction) {
-                                Button {
-                                    withAnimation(.spring(duration: 0.3)) {
-                                        cameraViewModel.switchCaptureMode(to: .recognition)
-                                    }
-                                } label: {
-                                    Image(systemName: cameraViewModel.captureMode.iconName)
-                                        .contentTransition(.symbolEffect(.replace))
-                                }
-                            }
-                        case .recognition:
-                            ToolbarItem(placement: .primaryAction) {
-                                Button {
-                                    withAnimation(.spring(duration: 0.3)) {
-                                        cameraViewModel.switchCaptureMode(to: .codes)
-                                    }
-                                } label: {
-                                    Image(systemName: cameraViewModel.captureMode.iconName)
-                                        .contentTransition(.symbolEffect(.replace))
-                                }
-                            }
+                        VStack {
+                            topBar
+                            Spacer()
                         }
                     }
+                    .tabItem {
+                        Label("", systemImage: "camera.fill")
+                    }
+                    .tag(Tab.cameraTab)
+                    // TODO: Make the camera flow to stop when in history tab whithout overlapping the History screen with the View from .ready CameraState case
+//                    .onAppear {
+//                        cameraViewModel.start()
+//                    }
+                    
+                    HistoryView()
+                        .tabItem {
+                            Label("", systemImage: "list.bullet.rectangle.portrait")
+                        }
+                        .tag(Tab.historyTab)
+//                        .onAppear {
+//                            cameraViewModel.stop()
+//                        }
                 }
+                
                 
             case .idle, .requestingPermission, .configuring:
                 ProgressView()
@@ -85,9 +75,10 @@ struct CameraView: View {
                     ContentUnavailableView(
                         "Camera Access Required",
                         systemImage: "camera.fill",
-                        description: Text("Please, allow camera access in Settings.")
+                        description: Text("Please, allow camera access in settings.")
                     )
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.title2)
+                    .fontWeight(.bold)
                     .foregroundStyle(.primary)
                     
                     Button() {
@@ -96,8 +87,8 @@ struct CameraView: View {
                     } label: {
                         Label("Open settings", systemImage: "arrow.forward")
                     }
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.primary)
+                    .font(.callout)
+                    .fontWeight(.bold)
                     
                     Spacer()
                 }
@@ -111,6 +102,7 @@ struct CameraView: View {
                         systemImage: "exclamationmark.fill",
                         description: Text(error.localizedDescription)
                     )
+                    
                     Button() {
                         Task {
                             await cameraViewModel.setUpCameraAndStart()
@@ -124,13 +116,25 @@ struct CameraView: View {
                 .padding()
                 
             case .ready:
-                Text("Camera is on hold")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.primary)
+                ContentUnavailableView("Camera is on hold", systemImage: "zzz")
+                
+//                VStack (spacing: 16) {
+//                    Image(systemName: "zzz")
+//                        .resizable()
+//                        .aspectRatio(contentMode: .fit)
+//                        .frame(maxWidth: 120, maxHeight: 120)
+//                    
+//                    Text("Camera is on hold")
+//                        .font(.title2)
+//                        .fontWeight(.bold)
+//                        .foregroundStyle(.primary)
+//                }
+                
                 
             default:
                 Text("UNKNOWN STATE")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.title2)
+                    .fontWeight(.bold)
                     .foregroundStyle(.primary)
             }
             
@@ -157,18 +161,97 @@ extension CameraView {
     private var torchIconName: String {
         cameraViewModel.isTorchOn ? "bolt.fill" : "bolt.slash.fill"
     }
+    
+    private var topBarName: String {
+        switch cameraViewModel.captureMode {
+        case .codes: String(localized: "top_bar_name.codes", defaultValue: "Code Scanner")
+        case .recognition: String(localized: "top_bar_name.recognition", defaultValue: "Object classification")
+        }
+    }
+    
+    private var topBarDescription: String {
+        switch cameraViewModel.captureMode {
+        case .codes: String(localized: "top_bar_description.codes", defaultValue: "Point the camera at the code")
+        case .recognition: String(localized: "top_bar_description.recognition", defaultValue: "Point the camera at the object")
+        }
+    }
+    
+    @ViewBuilder
+    private var topBar: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(topBarName)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white)
+                    .shadow(radius: 2)
+                Text(topBarDescription)
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.5))
+                    .shadow(radius: 1)
+            }
+            
+            Spacer()
+            HStack(spacing: 4) {
+                Button {
+                    withAnimation(.spring(duration: 0.3)) {
+                        cameraViewModel.toggleTorch()
+                    }
+                } label: {
+                    Image(systemName: torchIconName)
+                        .frame(maxWidth: 50, maxHeight: 50)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
+                        .foregroundStyle(cameraViewModel.isTorchOn ? .yellow : .primary)
+                }
+                
+                switch cameraViewModel.captureMode {
+                    
+                case .codes:
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            cameraViewModel.switchCaptureMode(to: .recognition)
+                        }
+                    } label: {
+                        Image(systemName: cameraViewModel.captureMode.iconName)
+                            .frame(maxWidth: 50, maxHeight: 50)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
+                            .foregroundStyle(.black)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                    
+                case .recognition:
+                    Button {
+                        withAnimation(.spring(duration: 0.3)) {
+                            cameraViewModel.switchCaptureMode(to: .codes)
+                        }
+                    } label: {
+                        Image(systemName: cameraViewModel.captureMode.iconName)
+                            .frame(maxWidth: 50, maxHeight: 50)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
+                            .foregroundStyle(.black)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                }
+            }
+        }
+        .padding()
+    }
 }
 
-#Preview ("English") {
-    ZStack {
-        CameraView()
-    }
-    .environment(\.locale, Locale(identifier: "EN"))
-}
 
-#Preview ("Russian") {
-    ZStack {
-        CameraView()
-    }
-    .environment(\.locale, Locale(identifier: "RU"))
-}
+//#Preview ("English") {
+//    ZStack {
+//        CameraView(cameraViewModel: )
+//    }
+//    .environment(\.locale, Locale(identifier: "EN"))
+//}
+//
+//#Preview ("Russian") {
+//    ZStack {
+//        CameraView(cameraViewModel: )
+//    }
+//    .environment(\.locale, Locale(identifier: "RU"))
+//}

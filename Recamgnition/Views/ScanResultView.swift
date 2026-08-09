@@ -19,15 +19,17 @@ struct ScanResultView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(iconBG)
+                        .fill(iconBackground)
                         .frame(width: 48, height: 48)
                     Image(systemName: iconName)
-                        .font(.system(size: 20, weight: .medium))
+                        .font(.title3)
+                        .fontWeight(.bold)
                         .foregroundStyle(iconColor)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(typeLabel)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.footnote)
+                        .fontWeight(.medium)
                         .foregroundStyle(.white.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.8)
@@ -40,7 +42,8 @@ struct ScanResultView: View {
                     Circle().fill(.green.opacity(0.2))
                         .frame(width: 32, height: 32)
                     Image(systemName: "checkmark")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.footnote)
+                        .fontWeight(.bold)
                         .foregroundStyle(.green)
                 }
             }
@@ -53,7 +56,9 @@ struct ScanResultView: View {
             
             ScrollView {
                 Text(result.rawString)
-                    .font(.system(size: 15, weight: .regular, design: .monospaced))
+                    .font(.subheadline)
+                    .fontWeight(.regular)
+                    .fontDesign(.monospaced)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .foregroundStyle(.white.opacity(0.9))
@@ -64,10 +69,10 @@ struct ScanResultView: View {
             Spacer().frame(height: 20)
             
             VStack {
-                mainBtn
+                mainButton
                 HStack {
-                    copyBtn
-                    scanAgainBtn
+                    copyButton
+                    scanAgainButton
                 }
             }
             .padding(.horizontal, 20)
@@ -88,20 +93,22 @@ struct ScanResultView: View {
                 appeared = true
             }
         }
+        .toolbar(.hidden, for: .tabBar)
     }
 }
 
 extension ScanResultView {
     
     @ViewBuilder
-    private var mainBtn: some View {
+    private var mainButton: some View {
         switch result {
         case .url(let url):
             Button {
                 UIApplication.shared.open(url)
             } label: {
                 Label("Open link", systemImage: "safari.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.callout)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
@@ -117,7 +124,8 @@ extension ScanResultView {
                 }
             } label: {
                 Label("Share text", systemImage: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.callout)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
@@ -127,7 +135,7 @@ extension ScanResultView {
         }
     }
     
-    private var copyBtn: some View {
+    private var copyButton: some View {
         Button {
             UIPasteboard.general.string = result.rawString
             withAnimation { copied = true }
@@ -136,7 +144,8 @@ extension ScanResultView {
             }
         } label: {
             Label(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
-                .font(.system(size: 14, weight: .medium))
+                .font(.subheadline)
+                .fontWeight(.medium)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
@@ -145,12 +154,13 @@ extension ScanResultView {
         }
     }
     
-    private var scanAgainBtn: some View {
+    private var scanAgainButton: some View {
         Button {
             onReset()
         } label: {
             Label("Scan again", systemImage: "qrcode.viewfinder")
-                .font(.system(size: 14, weight: .medium))
+                .font(.subheadline)
+                .fontWeight(.medium)
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)
@@ -167,11 +177,11 @@ extension ScanResultView {
     }
     private var typeLabel: String {
         switch result {
-        case .url: "Link"
-        case .text: "Text"
+        case .url: String(localized: "Link", defaultValue: "Link")
+        case .text: String(localized: "Text", defaultValue: "Text")
         }
     }
-    private var iconBG: Color {
+    private var iconBackground: Color {
         switch result {
         case .url: .cyan.opacity(0.2)
         case .text: .purple.opacity(0.2)

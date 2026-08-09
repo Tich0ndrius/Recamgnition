@@ -38,18 +38,14 @@ struct ScannerView: View {
                         Spacer()
                         if scannedResult == nil {
                             Text("Scan the code")
-                                .font(.system(size: 15, weight: .medium))
+                                .font(.subheadline)
+                                .fontWeight(.medium)
                                 .foregroundStyle(.white)
                                 .padding(.bottom, geo.size.height * 0.3)
                         }
                     }
                 }
                 
-            }
-            
-            VStack {
-                topBar
-                Spacer()
             }
             
             if let result = scannedResult {
@@ -65,33 +61,6 @@ struct ScannerView: View {
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: scannedResult != nil)
             }
         }
-    }
-}
-
-extension ScannerView {
-    @ViewBuilder
-    private var topBar: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Code Scanner")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(.white)
-                Text("Point the camera at the code")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.5))
-            }
-            
-            Spacer()
-            
-            //            Button {
-            //                cameraViewModel.toggleTorch()
-            //            } label: {
-            //                ZStack {
-            //                    Circle()
-            //                }
-            //            }
-        }
-        .padding()
     }
 }
 
