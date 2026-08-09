@@ -126,4 +126,8 @@ final class CameraViewModel {
     func stop() {
         cameraService.stopSession()
     }
+    
+    func stopAltTab() {
+        cameraService.stopSessionAltTab()
+    }
 }

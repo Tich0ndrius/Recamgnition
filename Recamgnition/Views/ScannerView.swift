@@ -41,7 +41,7 @@ struct ScannerView: View {
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                                 .foregroundStyle(.white)
-                                .padding(.bottom, geo.size.height * 0.3)
+                                .padding(.bottom, geo.size.height * 0.25)
                         }
                     }
                 }
