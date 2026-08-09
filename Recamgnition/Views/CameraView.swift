@@ -26,7 +26,7 @@ struct CameraView: View {
         ZStack {
             switch cameraViewModel.cameraState {
                 
-            case .running:
+            case .running, .altTabbed:
                 TabView(selection: $selectedTab) {
                     ZStack {
                         CameraPreviewBridge(session: cameraViewModel.captureSession)
@@ -51,19 +51,18 @@ struct CameraView: View {
                         Label("", systemImage: "camera.fill")
                     }
                     .tag(Tab.cameraTab)
-                    // TODO: Make the camera flow to stop when in history tab whithout overlapping the History screen with the View from .ready CameraState case
-//                    .onAppear {
-//                        cameraViewModel.start()
-//                    }
+                    .onAppear {
+                        cameraViewModel.start()
+                    }
                     
                     HistoryView()
                         .tabItem {
                             Label("", systemImage: "list.bullet.rectangle.portrait")
                         }
                         .tag(Tab.historyTab)
-//                        .onAppear {
-//                            cameraViewModel.stop()
-//                        }
+                        .onAppear {
+                            cameraViewModel.stopAltTab()
+                        }
                 }
                 
                 

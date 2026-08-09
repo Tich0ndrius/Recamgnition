@@ -20,6 +20,7 @@ protocol CameraServiceProtocol: AnyObject {
     func switchCaptureMode(to newMode: CaptureMode)
     func startSession()
     func stopSession()
+    func stopSessionAltTab()
     func setUpCaptureSession() async
 }
 
@@ -242,6 +243,19 @@ final class CameraService: NSObject, CameraServiceProtocol {
             self.transition(to: .ready)
         }
     }
+    
+    func stopSessionAltTab() {
+        guard isConfigured else { return }
+        
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            guard self.captureSession.isRunning else { return }
+            
+            self.captureSession.stopRunning()
+            self.transition(to: .altTabbed)
+        }
+    }
+    
 }
 
 
@@ -297,6 +311,7 @@ enum CameraState: Equatable, Sendable {
     case configuring
     case ready
     case running
+    case altTabbed
     case permissionDenied
     case restricted
     case failed(CameraSetupError)
