@@ -10,7 +10,7 @@ import SwiftData
 
 struct HistoryView: View {
     @Environment(\.modelContext) var context
-    @Query(sort: \ScanHistoryEntity.date) var history: [ScanHistoryEntity]
+    @Query(sort: \ScanHistoryEntity.date, order: .reverse) var history: [ScanHistoryEntity]
     
     var body: some View {
         NavigationStack {
@@ -47,8 +47,19 @@ struct HistoryCell: View {
     var body: some View {
         HStack {
             Text(history.date, format: .dateTime.month(.abbreviated).day().hour().minute())
-                .frame(width: 100, alignment: .leading)
+                .frame(width: 120, alignment: .leading)
             Text(history.content)
+                .contextMenu {
+                    Button {
+                        UIPasteboard.general.string = history.content
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                    
+                    ShareLink(item: history.content) {
+                        Label("Share text", systemImage: "square.and.arrow.up")
+                    }
+                }
         }
     }
 }

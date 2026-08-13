@@ -16,10 +16,11 @@ struct CameraView: View {
     }
     
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
     @State private var selectedTab: Tab = .cameraTab
     
     let cameraViewModel: CameraViewModel
-
+    
     
     var body: some View {
         
@@ -117,17 +118,17 @@ struct CameraView: View {
             case .ready:
                 ContentUnavailableView("Camera is on hold", systemImage: "zzz")
                 
-//                VStack (spacing: 16) {
-//                    Image(systemName: "zzz")
-//                        .resizable()
-//                        .aspectRatio(contentMode: .fit)
-//                        .frame(maxWidth: 120, maxHeight: 120)
-//                    
-//                    Text("Camera is on hold")
-//                        .font(.title2)
-//                        .fontWeight(.bold)
-//                        .foregroundStyle(.primary)
-//                }
+                //                VStack (spacing: 16) {
+                //                    Image(systemName: "zzz")
+                //                        .resizable()
+                //                        .aspectRatio(contentMode: .fit)
+                //                        .frame(maxWidth: 120, maxHeight: 120)
+                //
+                //                    Text("Camera is on hold")
+                //                        .font(.title2)
+                //                        .fontWeight(.bold)
+                //                        .foregroundStyle(.primary)
+                //                }
                 
                 
             default:
@@ -216,7 +217,7 @@ extension CameraView {
                             .frame(maxWidth: 50, maxHeight: 50)
                             .background(.ultraThinMaterial, in: Circle())
                             .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
-                            .foregroundStyle(.black)
+                            .foregroundStyle(colorScheme == .dark ? .white : .black)
                             .contentTransition(.symbolEffect(.replace))
                     }
                     
@@ -230,7 +231,7 @@ extension CameraView {
                             .frame(maxWidth: 50, maxHeight: 50)
                             .background(.ultraThinMaterial, in: Circle())
                             .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
-                            .foregroundStyle(.black)
+                            .foregroundStyle(colorScheme == .dark ? .white : .black)
                             .contentTransition(.symbolEffect(.replace))
                     }
                 }
@@ -241,16 +242,31 @@ extension CameraView {
 }
 
 
-//#Preview ("English") {
-//    ZStack {
-//        CameraView(cameraViewModel: )
-//    }
-//    .environment(\.locale, Locale(identifier: "EN"))
-//}
-//
-//#Preview ("Russian") {
-//    ZStack {
-//        CameraView(cameraViewModel: )
-//    }
-//    .environment(\.locale, Locale(identifier: "RU"))
-//}
+#Preview ("Fake history EN", traits: .mockScanHistory) {
+    ZStack {
+        CameraView(cameraViewModel: .mock())
+    }
+    .environment(\.locale, Locale(identifier: "EN"))
+}
+
+#Preview ("Denied EN") {
+    ZStack {
+        CameraView(cameraViewModel: .mock(cameraState: .permissionDenied))
+    }
+    .environment(\.locale, Locale(identifier: "EN"))
+}
+
+#Preview ("Ready EN") {
+    ZStack {
+        CameraView(cameraViewModel: .mock(cameraState: .ready))
+    }
+    .environment(\.locale, Locale(identifier: "EN"))
+}
+
+
+#Preview ("Russian") {
+    ZStack {
+        CameraView(cameraViewModel: .mock())
+    }
+    .environment(\.locale, Locale(identifier: "RU"))
+}
