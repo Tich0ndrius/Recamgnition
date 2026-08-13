@@ -358,3 +358,81 @@ enum TorchError: Error, Equatable, Sendable {
     case torchNotSupported
     case modeNotSupported
 }
+
+
+#if DEBUG
+
+final class CameraServiceMock: CameraServiceProtocol {
+    let scannedResultStream: AsyncStream<ScannedResult>
+    private let scannedResultContinuation: AsyncStream<ScannedResult>.Continuation
+    var currentMode: CaptureMode = .recognition
+    
+    let cameraStateStream: AsyncStream<CameraState>
+    private let stateContinuation: AsyncStream<CameraState>.Continuation
+    private(set) var currentState: CameraState
+    
+    let sampleBufferStream: AsyncStream<CMSampleBuffer>
+    private let frameContinuation: AsyncStream<CMSampleBuffer>.Continuation
+    
+    let captureSession = AVCaptureSession()
+    
+    private(set) var isAuthorized: Bool = true
+    private(set) var isConfigured: Bool = true
+    private(set) var scannedResult: ScannedResult?
+    
+    init(initialState: CameraState = .idle) {
+        let (stateStream, stateContinuation) = AsyncStream.makeStream(of: CameraState.self, bufferingPolicy: .bufferingNewest(1))
+        self.cameraStateStream = stateStream
+        self.stateContinuation = stateContinuation
+        
+        let (frameStream, frameContinuation) = AsyncStream.makeStream(of: CMSampleBuffer.self, bufferingPolicy: .bufferingNewest(1))
+        self.sampleBufferStream = frameStream
+        self.frameContinuation = frameContinuation
+        
+        let (scannedResultStream, scannedResultContinuation) = AsyncStream.makeStream(of: ScannedResult.self, bufferingPolicy: .bufferingNewest(1))
+        self.scannedResultStream = scannedResultStream
+        self.scannedResultContinuation = scannedResultContinuation
+        
+        self.stateContinuation.yield(initialState)
+        self.currentState = initialState
+    }
+    
+    deinit {
+        stateContinuation.finish()
+        frameContinuation.finish()
+        scannedResultContinuation.finish()
+    }
+    
+    func toggleTorch(_ enabled: Bool) throws -> Bool {
+        return enabled ? true : false
+    }
+    
+    
+    func resumeScanning() {
+        scannedResult = nil
+    }
+    
+    func transition(to newState: CameraState) {
+        guard newState != currentState else { return }
+        
+        currentState = newState
+        stateContinuation.yield(newState)
+    }
+    
+    func switchCaptureMode (to newMode: CaptureMode) {
+        guard newMode != currentMode else { return }
+        
+        currentMode = newMode
+    }
+    
+    func startSession() {}
+    
+    func stopSession() {}
+    
+    func stopSessionAltTab() {}
+    
+    func setUpCaptureSession() async {}
+    
+}
+
+#endif

@@ -33,3 +33,25 @@ final class ScanHistoryRepository: ScanHistoryRepositoryProtocol {
     }
     
 }
+
+#if DEBUG
+
+@MainActor
+final class ScanHistoryRepositoryMock: ScanHistoryRepositoryProtocol {
+    var savedResults: [ScanHistoryEntity] = []
+    
+    init(dataToSave: [ScannedResult] = [
+        .text("Mock text"),
+        .url(URL(string: "https://google.com")!),
+        .url(URL(string: "https://google.com")!)
+    ]) {
+        self.savedResults = dataToSave.map { stringData in
+            ScanHistoryEntity(content: stringData.rawString, date: .now)}
+    }
+    
+    func add(_ result: ScannedResult) {
+        savedResults.append(ScanHistoryEntity(content: result.rawString, date: .now))
+    }
+}
+
+#endif

@@ -131,3 +131,27 @@ final class CameraViewModel {
         cameraService.stopSessionAltTab()
     }
 }
+
+
+#if DEBUG
+
+extension CameraViewModel {
+    static func mock(
+        cameraState: CameraState = .running,
+        recognitionResult: RecognitionResult? = nil,
+        mockHistory: [ScanHistoryEntity] = []
+        ) -> Self {
+       
+        let mockCameraService = CameraServiceMock(initialState: cameraState)
+        let fakeRecognitionService = RecognitionService()
+        let mockScanHistoryRepo = ScanHistoryRepositoryMock()
+        
+        return Self(
+            cameraService: mockCameraService,
+            recognitionService: fakeRecognitionService,
+            scanHistoryRepository: mockScanHistoryRepo
+        )
+    }
+}
+
+#endif

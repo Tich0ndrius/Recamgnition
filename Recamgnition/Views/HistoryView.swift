@@ -10,7 +10,7 @@ import SwiftData
 
 struct HistoryView: View {
     @Environment(\.modelContext) var context
-    @Query(sort: \ScanHistoryEntity.date) var history: [ScanHistoryEntity]
+    @Query(sort: \ScanHistoryEntity.date, order: .reverse) var history: [ScanHistoryEntity]
     
     var body: some View {
         NavigationStack {
