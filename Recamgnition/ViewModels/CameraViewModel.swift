@@ -139,7 +139,6 @@ extension CameraViewModel {
     static func mock(
         cameraState: CameraState = .running,
         recognitionResult: RecognitionResult? = nil,
-        mockHistory: [ScanHistoryEntity] = []
         ) -> Self {
        
         let mockCameraService = CameraServiceMock(initialState: cameraState)

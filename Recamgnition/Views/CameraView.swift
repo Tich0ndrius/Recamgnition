@@ -242,7 +242,7 @@ extension CameraView {
 }
 
 
-#Preview ("English") {
+#Preview ("Fake history EN", traits: .mockScanHistory) {
     ZStack {
         CameraView(cameraViewModel: .mock())
     }
@@ -262,6 +262,7 @@ extension CameraView {
     }
     .environment(\.locale, Locale(identifier: "EN"))
 }
+
 
 #Preview ("Russian") {
     ZStack {

@@ -47,7 +47,7 @@ struct HistoryCell: View {
     var body: some View {
         HStack {
             Text(history.date, format: .dateTime.month(.abbreviated).day().hour().minute())
-                .frame(width: 100, alignment: .leading)
+                .frame(width: 120, alignment: .leading)
             Text(history.content)
         }
     }
