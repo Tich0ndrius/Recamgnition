@@ -116,13 +116,7 @@ extension ScanResultView {
                     .clipShape(RoundedRectangle(cornerRadius: 15))
             }
         case .text:
-            Button {
-                let av = UIActivityViewController(activityItems: [result.rawString], applicationActivities: nil)
-                if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let vc = scene.windows.first?.rootViewController {
-                    vc.present(av, animated: true)
-                }
-            } label: {
+            ShareLink(item: result.rawString) {
                 Label("Share text", systemImage: "square.and.arrow.up")
                     .font(.callout)
                     .fontWeight(.semibold)

@@ -49,6 +49,17 @@ struct HistoryCell: View {
             Text(history.date, format: .dateTime.month(.abbreviated).day().hour().minute())
                 .frame(width: 120, alignment: .leading)
             Text(history.content)
+                .contextMenu {
+                    Button {
+                        UIPasteboard.general.string = history.content
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                    
+                    ShareLink(item: history.content) {
+                        Label("Share text", systemImage: "square.and.arrow.up")
+                    }
+                }
         }
     }
 }
