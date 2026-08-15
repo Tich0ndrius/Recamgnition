@@ -47,7 +47,7 @@ final class CameraViewModel {
     
     // MARK: -
     
-    func startObservingCameraStates() {
+    private func startObservingCameraStates() {
         guard stateObservationTask == nil else { return }
         
         let states = cameraService.cameraStateStream
@@ -60,7 +60,7 @@ final class CameraViewModel {
         }
     }
     
-    func startObservingScannedResults() {
+    private func startObservingScannedResults() {
         guard scannedResultObservationTask == nil else { return }
         
         let results = cameraService.scannedResultStream
@@ -75,7 +75,7 @@ final class CameraViewModel {
         }
     }
     
-    func startObservingRecognitionResults() {
+    private func startObservingRecognitionResults() {
         guard recognitionObservationTask == nil else { return }
         
         let results = recognitionService.recognitionResultStream

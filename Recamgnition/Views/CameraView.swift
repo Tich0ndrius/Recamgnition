@@ -263,6 +263,12 @@ extension CameraView {
     .environment(\.locale, Locale(identifier: "EN"))
 }
 
+#Preview ("DviceUnaviable EN") {
+    ZStack {
+        CameraView(cameraViewModel: .mock(cameraState: .failed(.deviceUnaviable)))
+    }
+    .environment(\.locale, Locale(identifier: "EN"))
+}
 
 #Preview ("Russian") {
     ZStack {

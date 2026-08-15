@@ -48,14 +48,15 @@ struct MockSwiftDataTrait: PreviewModifier {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try ModelContainer(for: ScanHistoryEntity.self, configurations: config)
         
-        let sampleResults: [ScannedResult] = [
-            .text("Mock text"),
-            .url(URL(string: "https://google.com")!),
-            .url(URL(string: "https://google.com")!)
+        let sampleResults: [(result: ScannedResult, date: Date)] = [
+            (.text("Mock text"), .now),
+            (.text("Second mock text"), Calendar.current.date(byAdding: .day, value: -3, to: .now)!),
+            (.url(URL(string: "https://google.com")!), Calendar.current.date(byAdding: .hour, value: -12, to: .now)!),
+            (.url(URL(string: "https://apple.com")!), Calendar.current.date(byAdding: .day, value: -2, to: .now)!)
         ]
     
-        for result in sampleResults {
-            let entity = ScanHistoryEntity(content: result.rawString, date: .now)
+        for item in sampleResults {
+            let entity = ScanHistoryEntity(content: item.result.rawString, date: item.date)
             container.mainContext.insert(entity)
         }
         

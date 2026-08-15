@@ -13,7 +13,7 @@ protocol CameraServiceProtocol: AnyObject {
     var sampleBufferStream: AsyncStream<CMSampleBuffer> { get }
     var scannedResultStream: AsyncStream<ScannedResult> { get }
     
-    var currentMode: CaptureMode { get set }
+    var currentMode: CaptureMode { get }
     
     func toggleTorch(_ enabled: Bool) throws -> Bool
     func resumeScanning()
@@ -31,7 +31,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
     
     let scannedResultStream: AsyncStream<ScannedResult>
     private let scannedResultContinuation: AsyncStream<ScannedResult>.Continuation
-    var currentMode: CaptureMode = .recognition
+    private(set) var currentMode: CaptureMode = .recognition
     
     let cameraStateStream: AsyncStream<CameraState>
     private let stateContinuation: AsyncStream<CameraState>.Continuation
