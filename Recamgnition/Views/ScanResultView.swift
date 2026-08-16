@@ -169,10 +169,10 @@ extension ScanResultView {
         case .text: "text.alignleft"
         }
     }
-    private var typeLabel: String {
+    private var typeLabel: LocalizedStringKey {
         switch result {
-        case .url: String(localized: "Link", defaultValue: "Link")
-        case .text: String(localized: "Text", defaultValue: "Text")
+        case .url: "Link"
+        case .text: "Text"
         }
     }
     private var iconBackground: Color {

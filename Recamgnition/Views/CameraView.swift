@@ -162,17 +162,17 @@ extension CameraView {
         cameraViewModel.isTorchOn ? "bolt.fill" : "bolt.slash.fill"
     }
     
-    private var topBarName: String {
+    private var topBarName: LocalizedStringKey {
         switch cameraViewModel.captureMode {
-        case .codes: String(localized: "top_bar_name.codes", defaultValue: "Code Scanner")
-        case .recognition: String(localized: "top_bar_name.recognition", defaultValue: "Object classification")
+        case .codes: "top_bar_name.codes"
+        case .recognition: "top_bar_name.recognition"
         }
     }
     
-    private var topBarDescription: String {
+    private var topBarDescription: LocalizedStringKey {
         switch cameraViewModel.captureMode {
-        case .codes: String(localized: "top_bar_description.codes", defaultValue: "Point the camera at the code")
-        case .recognition: String(localized: "top_bar_description.recognition", defaultValue: "Point the camera at the object")
+        case .codes: "top_bar_description.codes"
+        case .recognition: "top_bar_description.recognition"
         }
     }
     
