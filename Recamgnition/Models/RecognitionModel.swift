@@ -13,12 +13,11 @@ struct RecognitionResult: Equatable {
 }
 
 extension RecognitionResult {
-    var displayedName: String {
-        return NSLocalizedString(
-            identifier,
-            tableName: "VisionClassification",
+    var displayedName: LocalizedStringResource {
+         LocalizedStringResource(
+            String.LocalizationValue(identifier),
+            table: "VisionClassification",
             bundle: .main,
-            value: identifier,
             comment: "Vision classification"
         )
     }

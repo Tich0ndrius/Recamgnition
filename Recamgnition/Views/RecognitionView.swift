@@ -15,11 +15,7 @@ struct RecognitionView: View {
             Spacer()
             
             if let recognition = currentRecognition {
-                Text(
-                    "\(recognition.displayedName.capitalized)" +
-                    ", " +
-                    "\(Int(recognition.confidence * 100))%"
-                )
+                Text("\(recognition.displayedName), \(Int(recognition.confidence * 100))%")
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(.white)
@@ -39,11 +35,12 @@ struct RecognitionView: View {
     }
 }
 
-//#Preview("English") {
-//    RecognitionView()
-//}
-//
-//#Preview("Russian") {
-//    RecognitionView()
-//        .environment(\.locale, Locale(identifier: "RU"))
-//}
+#Preview("English") {
+    RecognitionView(currentRecognition: RecognitionResult(identifier: "adult_cat", confidence: 0.98))
+        .environment(\.locale, Locale(identifier: "EN"))
+}
+
+#Preview("Russian") {
+    RecognitionView(currentRecognition: RecognitionResult(identifier: "adult_cat", confidence: 0.98))
+        .environment(\.locale, Locale(identifier: "RU"))
+}
