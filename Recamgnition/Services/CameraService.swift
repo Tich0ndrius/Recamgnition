@@ -82,7 +82,7 @@ final class CameraService: NSObject, CameraServiceProtocol {
         do {
             try device.lockForConfiguration()
         } catch {
-            print("Failed to lock device for configuration: \(error.localizedDescription)")
+            throw TorchError.lockFailed(underlyingError: error)
         }
         
         defer { device.unlockForConfiguration() }
@@ -353,10 +353,11 @@ enum CameraSetupError: Error, Equatable, Sendable {
     case unknown(String)
 }
 
-enum TorchError: Error, Equatable, Sendable {
+enum TorchError: Error, Sendable {
     case torchUnavailable
     case torchNotSupported
     case modeNotSupported
+    case lockFailed(underlyingError: Error)
 }
 
 

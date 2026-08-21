@@ -33,7 +33,7 @@ struct ScanResultView: View {
                         .foregroundStyle(.white.opacity(0.5))
                         .textCase(.uppercase)
                         .tracking(0.8)
-                    Text("Data recieved")
+                    Text("Data received")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(.white)
                 }

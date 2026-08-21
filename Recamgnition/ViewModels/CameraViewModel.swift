@@ -104,8 +104,14 @@ final class CameraViewModel {
     func toggleTorch() {
         do {
             isTorchOn = try cameraService.toggleTorch(!isTorchOn)
+        } catch TorchError.lockFailed(let underlyingError) {
+            print("Device lock failed: \(underlyingError.localizedDescription)")
+        } catch TorchError.torchUnavailable {
+            print("Torch is unavailable (e.g., camera in use or device too hot)")
+        } catch TorchError.modeNotSupported {
+            print("Requested torch mode is not supported")
         } catch {
-            print("\(error.localizedDescription)")
+            print("Unexpected error: \(error.localizedDescription)")
         }
     }
     
